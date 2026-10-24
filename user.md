@@ -33,7 +33,7 @@ I want one place that remembers everything for me, so I can:
 - **Notes app:** Obsidian (Android app from the Play Store)
 - **Sync:** GitHub, using the Obsidian Git plugin
 - **Browser:** Chrome with the Claude in Chrome extension, set to allow all sites
-- **Accounts Claude can use:** Gmail, Google Calendar, Google Drive, Google Docs and Sheets, Spotify
+- **Accounts Claude can use:** All of my accounts
 
 Anything that needs a Mac, Windows, or the terminal won't work for me. Suggest a Chromebook-friendly way instead.
 
