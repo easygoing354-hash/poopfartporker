@@ -71,9 +71,16 @@ Anything that needs a Mac, Windows, or the terminal won't work for me. Suggest a
 
 ## Things to remember about me
 
-- [anything Claude should always keep in mind, e.g. preferences, routines, people in your life]
--
--
+- I'm new to tech words like repo, branch, and MCP. Explain them simply when they come up.
+- I'm on my Chromebook almost all the time when I use Claude.
+- I want one clear choice. I don't want to switch back and forth between setups.
+- I'm comfortable giving Claude my personal info and access to my accounts.
+- I use Claude in Chrome with every site allowed.
+- I want free tools. Don't push paid upgrades like Obsidian Sync.
+- I don't use Dropbox.
+- I learn a lot from YouTube videos. If I mention one, help me follow it and explain anything that's different for my Chromebook.
+- I type fast and make typos. Figure out what I meant instead of asking me to fix it.
+- [add more: routines, people in your life, things you like or hate]
 
 ---
 
