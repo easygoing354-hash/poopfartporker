@@ -31,6 +31,7 @@ I want one place that remembers everything for me, so I can:
 
 - **Computer:** Acer Chromebook 315 (I use this most of the time)
 - **Notes app:** Obsidian (Android app from the Play Store)
+- **Sync:** GitHub, using the Obsidian Git plugin
 - **Browser:** Chrome with the Claude in Chrome extension, set to allow all sites
 - **Accounts Claude can use:** Gmail, Google Calendar, Google Drive, Google Docs and Sheets, Spotify
 
