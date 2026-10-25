@@ -1,0 +1,31 @@
+{
+  "_note": "Share counts were worked out from the USD values in Tony Montana's Schedule, divided by each stock's close on Fri Oct 23, 2026. Replace them with your exact share counts from your brokerage whenever you like; the next daily refresh picks them up.",
+  "holdings": [
+    { "t": "AMD",  "shares": 24.8508 },
+    { "t": "CELH", "shares": 156.4362 },
+    { "t": "ELF",  "shares": 33.7964 },
+    { "t": "ORCL", "shares": 26.3870 }
+  ],
+  "watchlist": {
+    "mag7":  ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA"],
+    "semi":  ["TSM", "ASML", "AVGO", "MU", "INTC", "QCOM", "ARM", "AMAT", "LRCX", "KLAC", "MRVL", "TXN"],
+    "soft":  ["NOW", "PLTR", "CRM", "SNOW", "DDOG", "NET", "CRWD", "ADBE"],
+    "neo":   ["CRWV", "NBIS", "IREN", "CIFR"],
+    "tech":  ["SMCI", "DELL", "HPE", "ANET", "VRT", "CSCO"],
+    "power": ["GEV", "BE", "CAT"],
+    "cons":  ["KO", "PEP", "MNST", "ULTA", "COTY"]
+  },
+  "markets": [
+    ["^GSPC", "S&P 500"],
+    ["^IXIC", "NASDAQ COMP"],
+    ["^DJI", "DOW JONES IND"],
+    ["^GSPTSE", "S&P/TSX COMP"],
+    ["^RUT", "RUSSELL 2000"],
+    ["^VIX", "VIX"],
+    ["^TNX", "UST 10Y YIELD"],
+    ["CL=F", "WTI CRUDE"],
+    ["GC=F", "GOLD"],
+    ["CAD=X", "USD/CAD"],
+    ["BTC-USD", "BITCOIN"]
+  ]
+}
