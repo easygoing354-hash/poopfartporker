@@ -1,19 +1,19 @@
 {
-  "_note": "Share counts were worked out from the USD values in Tony Montana's Schedule, divided by each stock's close on Fri Oct 23, 2026. Replace them with your exact share counts from your brokerage whenever you like; the next daily refresh picks them up.",
+  "_note": "Share counts and average cost per share from Questrade, Oct 25, 2026. Update them here after you buy or sell; the next refresh picks them up. The small DLR.TO cash ETF position (0.7551 shares) is left out.",
   "holdings": [
-    { "t": "AMD",  "shares": 24.8508 },
-    { "t": "CELH", "shares": 156.4362 },
-    { "t": "ELF",  "shares": 33.7964 },
-    { "t": "ORCL", "shares": 26.3870 }
+    { "t": "AMD", "shares": 24.2887, "cost": 227.8417 },
+    { "t": "CELH", "shares": 157.9901, "cost": 33.9494 },
+    { "t": "ELF", "shares": 34.0048, "cost": 73.5187 },
+    { "t": "ORCL", "shares": 25.9611, "cost": 132.8907 }
   ],
   "watchlist": {
-    "mag7":  ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA"],
-    "semi":  ["TSM", "ASML", "AVGO", "MU", "INTC", "QCOM", "ARM", "AMAT", "LRCX", "KLAC", "MRVL", "TXN"],
-    "soft":  ["NOW", "PLTR", "CRM", "SNOW", "DDOG", "NET", "CRWD", "ADBE"],
-    "neo":   ["CRWV", "NBIS", "IREN", "CIFR"],
-    "tech":  ["SMCI", "DELL", "HPE", "ANET", "VRT", "CSCO"],
+    "mag7": ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA"],
+    "semi": ["TSM", "ASML", "AVGO", "MU", "INTC", "QCOM", "ARM", "AMAT", "LRCX", "KLAC", "MRVL", "TXN"],
+    "soft": ["NOW", "PLTR", "CRM", "SNOW", "DDOG", "NET", "CRWD", "ADBE"],
+    "neo": ["CRWV", "NBIS", "IREN", "CIFR"],
+    "tech": ["SMCI", "DELL", "HPE", "ANET", "VRT", "CSCO"],
     "power": ["GEV", "BE", "CAT"],
-    "cons":  ["KO", "PEP", "MNST", "ULTA", "COTY"]
+    "cons": ["KO", "PEP", "MNST", "ULTA", "COTY"]
   },
   "markets": [
     ["^GSPC", "S&P 500"],

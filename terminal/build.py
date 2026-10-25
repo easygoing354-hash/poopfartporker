@@ -85,7 +85,7 @@ def holding(h):
         "name": meta.get("longName") or meta.get("shortName") or sym,
         "exch": meta.get("fullExchangeName", ""),
         "ccy": meta.get("currency", "USD"),
-        "shares": h["shares"],
+        "shares": h["shares"], "cost": h.get("cost"),
         "last": last, "prev": prev,
         "dayHigh": meta.get("regularMarketDayHigh"), "dayLow": meta.get("regularMarketDayLow"),
         "vol": meta.get("regularMarketVolume"),
