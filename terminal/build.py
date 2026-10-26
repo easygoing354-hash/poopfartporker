@@ -20,6 +20,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 PAGE = HERE.parent / "tony-montanas-terminal.html"
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+NASDAQ_UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+             "Accept": "application/json"}
+NQ = "https://api.nasdaq.com/api"
 YF = "https://query1.finance.yahoo.com"
 DATA_RE = re.compile(r'(<script id="tm-data" type="application/json">)(.*?)(</script>)', re.S)
 
@@ -28,10 +31,10 @@ def log(*a):
     print(*a, file=sys.stderr)
 
 
-def get(url, tries=4):
+def get(url, tries=4, headers=UA):
     for i in range(tries):
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25) as r:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=25) as r:
                 return json.load(r)
         except Exception as e:  # network blips, 429s
             if i == tries - 1:
@@ -92,6 +95,34 @@ def holding(h):
         "hi52": meta.get("fiftyTwoWeekHigh"), "lo52": meta.get("fiftyTwoWeekLow"),
         "time": meta.get("regularMarketTime"),
         "daily": daily, "i5d": i5d, "i1d": i1d,
+        "fund": safe(fundamentals, sym),
+    }
+
+
+def num(v):
+    """'$650.00' / '840,332,852,620' / 'N/A' -> float or None."""
+    try:
+        return float(str(v).replace("$", "").replace(",", ""))
+    except (TypeError, ValueError):
+        return None
+
+
+def fundamentals(sym):
+    """Street (adjusted) EPS and valuation inputs from Nasdaq. The page divides by the day's price."""
+    nq = lambda path: get(f"{NQ}/{path}", headers=NASDAQ_UA)["data"]
+    summ = nq(f"quote/{sym}/summary?assetclass=stocks")["summaryData"]
+    past = nq(f"company/{sym}/earnings-surprise")["earningsSurpriseTable"]["rows"][:4]
+    ahead = nq(f"analyst/{sym}/earnings-forecast")["quarterlyForecast"]["rows"][:4]
+    peg = (nq(f"analyst/{sym}/peg-ratio").get("pegr") or {}).get("pegValue")
+    eps = [num(r.get("eps")) for r in past]
+    est = [num(r.get("consensusEPSForecast")) for r in ahead]
+    return {
+        "epsTTM": round(sum(eps), 4) if len(eps) == 4 and None not in eps else None,
+        "epsNTM": round(sum(est), 4) if len(est) == 4 and None not in est else None,
+        "peg": num(peg),
+        "mktCap": num((summ.get("MarketCap") or {}).get("value")),
+        "target": num((summ.get("OneYrTarget") or {}).get("value")),
+        "avgVol": num((summ.get("AverageVolume") or {}).get("value")),
     }
 
 
