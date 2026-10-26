@@ -20,7 +20,7 @@
     "fin": ["JPM", "GS", "V", "HOOD", "SOFI", "COIN"],
     "energy": ["XOM", "CVX", "CCJ", "SLB"],
     "util": ["CEG", "VST", "NEE", "OKLO"],
-    "ind": ["GE", "UBER", "RKLB", "LMT", "BA"],
+    "ind": ["GE", "UBER", "RKLB", "LMT", "BA", "ONDS"],
     "mat": ["FCX", "NEM", "LIN", "MP"],
     "re": ["EQIX", "DLR", "PLD", "AMT"]
   },

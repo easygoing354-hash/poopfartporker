@@ -125,14 +125,18 @@ def fundamentals(sym):
     nq = lambda path: get(f"{NQ}/{path}", headers=NASDAQ_UA)["data"]
     summ = safe(lambda _: nq(f"quote/{sym}/summary?assetclass=stocks")["summaryData"], sym) or {}
     past = safe(lambda _: nq(f"company/{sym}/earnings-surprise")["earningsSurpriseTable"]["rows"][:4], sym) or []
-    ahead = safe(lambda _: nq(f"analyst/{sym}/earnings-forecast")["quarterlyForecast"]["rows"][:4], sym) or []
+    fc = safe(lambda _: nq(f"analyst/{sym}/earnings-forecast"), sym) or {}
+    ahead = ((fc.get("quarterlyForecast") or {}).get("rows") or [])[:4]
+    years = (fc.get("yearlyForecast") or {}).get("rows") or []
     peg = safe(lambda _: (nq(f"analyst/{sym}/peg-ratio").get("pegr") or {}).get("pegValue"), sym)
     eps = [num(r.get("eps")) for r in past]
     est = [num(r.get("consensusEPSForecast")) for r in ahead]
+    if len(est) < 4 or None in est:  # thinly covered names: fall back to next fiscal year's consensus
+        est = [num(years[min(1, len(years) - 1)].get("consensusEPSForecast"))] if years else []
     field = lambda k: num((summ.get(k) or {}).get("value"))
     return {
         "epsTTM": round(sum(eps), 4) if len(eps) == 4 and None not in eps else None,
-        "epsNTM": round(sum(est), 4) if len(est) == 4 and None not in est else None,
+        "epsNTM": round(sum(est), 4) if est and None not in est else None,
         "peg": num(peg),
         "mktCap": field("MarketCap"),
         "target": field("OneYrTarget"),
