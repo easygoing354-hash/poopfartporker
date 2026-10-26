@@ -6,7 +6,7 @@
 
 - `terminal/portfolio.json`: share counts, watchlist groups, market instruments.
 - `terminal/events.json`: upcoming earnings and macro dates (from Tony Montana's Schedule).
-- `terminal/build.py`: pulls prices, charts and headlines from Yahoo Finance and bakes them into the page. Standard library only.
+- `terminal/build.py`: pulls prices, charts and headlines from Yahoo Finance, plus valuation ratios from Nasdaq, for every stock (holdings and watchlist get the same set), and bakes them into the page. Standard library only. To add a stock, put its ticker in a `watchlist` group in `portfolio.json`.
 
 Refresh by hand:
 

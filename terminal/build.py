@@ -2,8 +2,9 @@
 """Refresh the market data baked into tony-montanas-terminal.html.
 
 Pulls prices, intraday bars, a year of daily closes and headlines from Yahoo
-Finance's public chart and search endpoints, then rewrites the JSON block
-inside the page. Standard library only. Meant to run once a day at 8:00 AM ET.
+Finance's public chart and search endpoints, and the same valuation ratios
+from Nasdaq for every stock (holdings and watchlist alike), then rewrites the
+JSON block inside the page. Standard library only. Meant to run once a day at 8:00 AM ET.
 
     python3 terminal/build.py
 """
@@ -43,9 +44,9 @@ def get(url, tries=4, headers=UA):
             time.sleep(2 ** (i + 1))
 
 
-def chart(sym, rng, interval):
+def chart(sym, rng, interval, events=""):
     q = urllib.parse.quote(sym, safe="")
-    res = get(f"{YF}/v8/finance/chart/{q}?range={rng}&interval={interval}&includePrePost=false")["chart"]["result"][0]
+    res = get(f"{YF}/v8/finance/chart/{q}?range={rng}&interval={interval}&includePrePost=false&events={events}")["chart"]["result"][0]
     quote = res["indicators"]["quote"][0]
     closes, vols = quote.get("close") or [], quote.get("volume") or []
     bars = []
@@ -55,7 +56,8 @@ def chart(sym, rng, interval):
             continue
         v = vols[i] if i < len(vols) and vols[i] is not None else 0
         bars.append([t, round(c, 4), int(v)])
-    return res["meta"], bars
+    meta = dict(res["meta"], dividends=list(((res.get("events") or {}).get("dividends") or {}).values()))
+    return meta, bars
 
 
 def to_daily(meta, bars):
@@ -76,27 +78,37 @@ def last_prev(meta, daily):
     return round(last, 4), round(prev, 4)
 
 
-def holding(h):
-    sym = h["t"]
-    meta, d1y = chart(sym, "1y", "1d")
+def security(sym):
+    """Everything the page shows for one stock: quote, 1D/5D intraday, a year of daily closes, fundamentals."""
+    meta, d1y = chart(sym, "1y", "1d", events="div")
     daily = to_daily(meta, d1y)
     _, i5d = chart(sym, "5d", "15m")
     _, i1d = chart(sym, "1d", "5m")
     last, prev = last_prev(meta, daily)
+    fund = safe(fundamentals, sym) or {}
+    # Dividends and average volume come from Yahoo's own history so every ticker gets them the same way
+    # (Nasdaq leaves both blank for many names): trailing-12-month cash dividends, 3-month average volume.
+    cutoff = time.time() - 365 * 86400
+    fund["div"] = round(sum(x["amount"] for x in meta["dividends"] if x.get("date", 0) >= cutoff), 4)
+    vols = [v for _, _, v in daily[-63:] if v]
+    fund["avgVol"] = round(sum(vols) / len(vols)) if vols else None
     return {
         "t": sym,
         "name": meta.get("longName") or meta.get("shortName") or sym,
         "exch": meta.get("fullExchangeName", ""),
         "ccy": meta.get("currency", "USD"),
-        "shares": h["shares"], "cost": h.get("cost"),
         "last": last, "prev": prev,
         "dayHigh": meta.get("regularMarketDayHigh"), "dayLow": meta.get("regularMarketDayLow"),
         "vol": meta.get("regularMarketVolume"),
         "hi52": meta.get("fiftyTwoWeekHigh"), "lo52": meta.get("fiftyTwoWeekLow"),
         "time": meta.get("regularMarketTime"),
         "daily": daily, "i5d": i5d, "i1d": i1d,
-        "fund": safe(fundamentals, sym),
+        "fund": fund,
     }
+
+
+def holding(h):
+    return dict(security(h["t"]), shares=h["shares"], cost=h.get("cost"))
 
 
 def num(v):
@@ -108,35 +120,28 @@ def num(v):
 
 
 def fundamentals(sym):
-    """Street (adjusted) EPS and valuation inputs from Nasdaq. The page divides by the day's price."""
+    """Street (adjusted) EPS and valuation inputs from Nasdaq. The page divides by the day's price.
+    Each piece is fetched on its own so one missing table doesn't blank the rest."""
     nq = lambda path: get(f"{NQ}/{path}", headers=NASDAQ_UA)["data"]
-    summ = nq(f"quote/{sym}/summary?assetclass=stocks")["summaryData"]
-    past = nq(f"company/{sym}/earnings-surprise")["earningsSurpriseTable"]["rows"][:4]
-    ahead = nq(f"analyst/{sym}/earnings-forecast")["quarterlyForecast"]["rows"][:4]
-    peg = (nq(f"analyst/{sym}/peg-ratio").get("pegr") or {}).get("pegValue")
+    summ = safe(lambda _: nq(f"quote/{sym}/summary?assetclass=stocks")["summaryData"], sym) or {}
+    past = safe(lambda _: nq(f"company/{sym}/earnings-surprise")["earningsSurpriseTable"]["rows"][:4], sym) or []
+    ahead = safe(lambda _: nq(f"analyst/{sym}/earnings-forecast")["quarterlyForecast"]["rows"][:4], sym) or []
+    peg = safe(lambda _: (nq(f"analyst/{sym}/peg-ratio").get("pegr") or {}).get("pegValue"), sym)
     eps = [num(r.get("eps")) for r in past]
     est = [num(r.get("consensusEPSForecast")) for r in ahead]
+    field = lambda k: num((summ.get(k) or {}).get("value"))
     return {
         "epsTTM": round(sum(eps), 4) if len(eps) == 4 and None not in eps else None,
         "epsNTM": round(sum(est), 4) if len(est) == 4 and None not in est else None,
         "peg": num(peg),
-        "mktCap": num((summ.get("MarketCap") or {}).get("value")),
-        "target": num((summ.get("OneYrTarget") or {}).get("value")),
-        "avgVol": num((summ.get("AverageVolume") or {}).get("value")),
+        "mktCap": field("MarketCap"),
+        "target": field("OneYrTarget"),
+        "sector": (summ.get("Sector") or {}).get("value"),
     }
 
 
 def watch(sym, group):
-    meta, bars = chart(sym, "1mo", "1d")
-    daily = to_daily(meta, bars)
-    last, prev = last_prev(meta, daily)
-    return {
-        "t": sym, "g": group,
-        "name": meta.get("shortName") or meta.get("longName") or sym,
-        "last": last, "prev": prev,
-        "hi52": meta.get("fiftyTwoWeekHigh"), "lo52": meta.get("fiftyTwoWeekLow"),
-        "daily": daily,
-    }
+    return dict(security(sym), g=group)
 
 
 def market(sym, name):

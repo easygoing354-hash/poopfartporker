@@ -13,7 +13,16 @@
     "neo": ["CRWV", "NBIS", "IREN", "CIFR"],
     "tech": ["SMCI", "DELL", "HPE", "ANET", "VRT", "CSCO"],
     "power": ["GEV", "BE", "CAT"],
-    "cons": ["KO", "PEP", "MNST", "ULTA", "COTY"]
+    "cons": ["KO", "PEP", "MNST", "ULTA", "COTY"],
+    "comm": ["NFLX", "SPOT", "RDDT", "DIS"],
+    "disc": ["ABNB", "DASH", "CMG", "NKE", "RCL"],
+    "health": ["LLY", "NVO", "ISRG", "VRTX", "UNH", "HIMS"],
+    "fin": ["JPM", "GS", "V", "HOOD", "SOFI", "COIN"],
+    "energy": ["XOM", "CVX", "CCJ", "SLB"],
+    "util": ["CEG", "VST", "NEE", "OKLO"],
+    "ind": ["GE", "UBER", "RKLB", "LMT", "BA"],
+    "mat": ["FCX", "NEM", "LIN", "MP"],
+    "re": ["EQIX", "DLR", "PLD", "AMT"]
   },
   "markets": [
     ["^GSPC", "S&P 500"],
