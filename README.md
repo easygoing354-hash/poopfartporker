@@ -21,4 +21,4 @@ Refresh by hand:
 python3 terminal/build.py
 ```
 
-A scheduled task runs it every weekday before 8:00 AM ET and republishes the artifact. It does not commit, so the data baked into the copy here is whatever was last committed by hand.
+A scheduled task runs it every weekday at 7:45 AM ET (done by 8:00) and republishes the artifact. It does not commit, so the data baked into the copy here is whatever was last committed by hand.

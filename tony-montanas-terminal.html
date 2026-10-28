@@ -623,8 +623,8 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   const daysTo = d => Math.round((Date.parse(d + "T12:00:00Z") - Date.parse(etYmd(new Date()) + "T12:00:00Z")) / 864e5);
 
   // ---------- Clock, freshness, next refresh ----------
-  // The refresh runs weekdays at 7:56 AM ET, so prices are up by 8:00.
-  const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], RUN = 7 * 60 + 56;
+  // The refresh starts weekdays at 7:45 AM ET and takes a few minutes, so prices are up by 8:00.
+  const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], RUN = 7 * 60 + 45;
   const isWk = d => d > 0 && d < 6;
   function etNow() { const p = etParts(new Date()); return { p, wd: WD.indexOf(p.weekday), min: +p.hour * 60 + +p.minute }; }
   function minsToNext() {
