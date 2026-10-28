@@ -2,12 +2,13 @@
 
 ## Tony Montana's Terminal
 
-`tony-montanas-terminal.html` is a Bloomberg-style dashboard for the Tony Montana portfolio (AMD, CELH, ELF, ORCL) and its watchlist. It has four pages (tabs, or `#terminal`, `#news`, `#schedule`, `#sectors` in the URL):
+`tony-montanas-terminal.html` is a Bloomberg-style dashboard for the Tony Montana portfolio (AMD, CELH, ELF, ORCL) and its watchlist. It has five pages (tabs, or `#terminal`, `#watchlist`, `#news`, `#schedule`, `#sectors` in the URL):
 
-- **Terminal**: holdings, price chart, holdings news, markets, watchlist. Every stock shows a Street rating (analyst Buy/Hold/Sell consensus) and a Trend signal (price vs its 50- and 200-day averages).
+- **Portfolio**: holdings with a card per stock (next earnings, its sector fund today, how it did against that fund last month, analyst target), price chart, holdings news, upcoming dates, markets.
+- **Watchlist**: the 88-stock watchlist with the same price chart. Every stock (holdings and watchlist) shows a Street rating (analyst Buy/Hold/Sell consensus) and a Trend signal (price vs its 50- and 200-day averages).
 - **News**: headlines for the holdings and for each sector (semis, software, biotech, regional banks, homebuilders, market), filterable, with a sector check on the side.
 - **Schedule**: earnings, Fed and macro dates, grouped by week.
-- **Sectors**: your ETFs (QQQ, SMH, SOXX, IGV, XBI, KRE, XHB, ITB) with Buy/Hold/Sell, a sector heat map, a relative chart, stock-vs-sector, spreads and a scoreboard of 25 ETFs.
+- **Sectors**: how each sector is doing, through 25 ETFs including yours (QQQ, SMH, SOXX, IGV, XBI, KRE, XHB, ITB): a heat map, a relative chart, stock-vs-sector, spreads and a scoreboard of 25 ETFs.
 
 Files:
 

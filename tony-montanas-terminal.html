@@ -94,8 +94,8 @@ a { color: inherit; }
 /* Grid of panels */
 .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 @media (min-width: 1100px) {
-  .grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: "port gp" "news side" "most most"; }
-  #p-port { grid-area: port; } #p-gp { grid-area: gp; } #p-news { grid-area: news; } #p-side { grid-area: side; } #p-most { grid-area: most; }
+  .grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: "port gp" "news side"; }
+  #p-port { grid-area: port; } #pg-terminal #p-gp { grid-area: gp; } #p-news { grid-area: news; } #p-side { grid-area: side; }
 }
 .panel { background: var(--panel); border: 1px solid var(--line); min-width: 0; display: flex; flex-direction: column; transition: border-color .3s; }
 .panel.flash { border-color: var(--key); }
@@ -280,7 +280,6 @@ canvas#rv { display: block; width: 100%; height: 260px; }
 .about { margin: 8px 0 0; line-height: 1.45; }
 .about .yrs { color: var(--muted); }
 .why2 { color: var(--muted); font-size: 12px; white-space: normal; min-width: 30ch; }
-@media (min-width: 1100px) { .sect { grid-template-areas: "sig sig" "map rv" "vs pairs" "board board"; } #p-sig { grid-area: sig; } }
 
 /* Buy / Hold / Sell badges. Street = analyst consensus; Trend = price vs its 50- and 200-day averages. */
 .rate { display: inline-block; min-width: 4.2ch; text-align: center; font-family: var(--font-label); font-weight: 700; letter-spacing: .06em; font-size: 12px; padding: 0 5px; border: 1px solid; line-height: 1.45; }
@@ -288,9 +287,18 @@ canvas#rv { display: block; width: 100%; height: 260px; }
 .rate.HOLD { color: var(--amber); border-color: var(--amber); }
 .rate.SELL { color: #fff; background: var(--down); border-color: var(--down); }
 .votes { color: var(--muted); font-size: 11px; margin-left: 5px; }
-.tile .rate { font-size: 10px; margin-top: 2px; }
-.sig-key { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font-size: 12px; margin: 8px 0 0; }
-.sig-key b { color: var(--fg); font-weight: 500; }
+/* One card per holding under PORT: next earnings, how its sector did today, analysts' target. */
+.hcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+@media (min-width: 520px) { .hcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hcard { background: var(--row); border: 1px solid var(--line); border-left: 3px solid var(--amber); padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; text-align: left; color: var(--fg); }
+.hcard:hover { border-color: var(--muted); border-left-color: var(--amber); }
+.hcard .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hcard .top b { font-family: var(--font-label); font-size: 17px; color: var(--amber); letter-spacing: .04em; }
+.hcard .top .when { font-variant-numeric: tabular-nums; }
+.hcard .ln { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.hcard .ln span:first-child { color: var(--muted); }
+.hcard .ln span:last-child { white-space: nowrap; }
+.hcard .soon { color: var(--key); font-weight: 600; }
 
 /* News page */
 .newsgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
@@ -336,14 +344,15 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     <button class="fkey" type="button" data-fn="EVTS">EVTS<span>Calendar</span></button>
     <button class="fkey" type="button" data-fn="TOP">TOP<span>News</span></button>
     <button class="fkey" type="button" data-fn="WEI">WEI<span>Markets</span></button>
-    <button class="fkey" type="button" data-fn="MOST">MOST<span>Watchlist</span></button>
+    <button class="fkey" type="button" data-fn="MOST">MOST<span>Watchlist page</span></button>
     <button class="fkey" type="button" data-fn="NEWS">NEWS<span>All news</span></button>
     <button class="fkey" type="button" data-fn="SCHED">SCHED<span>Schedule</span></button>
     <button class="fkey" type="button" data-fn="SECT">SECT<span>Sectors</span></button>
   </nav>
 
   <nav class="tabs" aria-label="Pages">
-    <a href="#terminal" data-page="terminal">Terminal<span>Prices</span></a>
+    <a href="#terminal" data-page="terminal">Portfolio<span>Holdings</span></a>
+    <a href="#watchlist" data-page="watchlist">Watchlist<span>Stocks</span></a>
     <a href="#news" data-page="news">News<span>Headlines</span></a>
     <a href="#schedule" data-page="schedule">Schedule<span>Calendar</span></a>
     <a href="#sectors" data-page="sectors">Sectors<span>ETFs</span></a>
@@ -365,13 +374,12 @@ canvas#rv { display: block; width: 100%; height: 260px; }
             <thead><tr>
               <th class="l">Ticker</th><th class="l">Name</th><th>Last</th><th>Net Chg</th><th>Chg %</th><th>Shares</th><th>Avg Cost</th>
               <th>Mkt Val</th><th>Day P&amp;L</th><th>Open P&amp;L</th><th class="l">Wgt</th><th class="l">52W Range</th>
-              <th class="grp">Mkt Cap</th><th>P/E TTM</th><th>P/E Fwd</th><th>PEG</th><th>Div Yld</th><th>Tgt Upside</th><th class="l grp">Street</th><th class="l">Trend</th>
+              <th class="grp">Mkt Cap</th><th>P/E TTM</th><th>P/E Fwd</th><th>PEG</th><th>Div Yld</th><th>Tgt Upside</th><th class="l grp" title="Wall Street analysts' consensus, with how many say buy · hold · sell">Street</th><th class="l" title="BUY: price above its 50-day average and the 50-day above the 200-day. SELL: both below. HOLD: mixed.">Trend</th>
             </tr></thead>
             <tbody id="portBody"></tbody>
           </table>
         </div>
-        <p class="note">Shares and average cost from Questrade as of Oct 25. After you buy or sell, update <code>terminal/portfolio.json</code> and the next refresh uses it. The small DLR.TO cash position is left out. Every stock on the terminal, holdings and watchlist, shows the same ratios; click one to see them all in GP.</p>
-        <div class="sig-key"><span><b>Street</b> = Wall Street analysts' consensus, with how many say buy · hold · sell.</span><span><b>Trend</b> = BUY when the price is above its 50-day average and the 50-day is above the 200-day, SELL when both are below, HOLD otherwise.</span><span>Neither is advice; they're two quick reads to start from.</span></div>
+        <div class="hcards" id="hcards"></div>
       </div>
     </section>
 
@@ -421,19 +429,23 @@ canvas#rv { display: block; width: 100%; height: 260px; }
       </section>
     </div>
 
+  </main>
+
+  <section class="page" id="pg-watchlist" data-page="watchlist" hidden aria-label="Watchlist">
+    <div id="gpSlotW"></div>
     <section class="panel" id="p-most" aria-labelledby="h-most">
-      <div class="ph"><h2 id="h-most"><span class="code">6) MOST</span>Watchlist</h2><div class="chips" id="chips" role="group" aria-label="Watchlist group"></div></div>
+      <div class="ph"><h2 id="h-most"><span class="code">MOST</span>Watchlist</h2><div class="chips" id="chips" role="group" aria-label="Watchlist group"></div></div>
       <div class="pb scroll">
         <table class="t">
           <thead><tr>
             <th class="l" data-k="t">Ticker</th><th class="l">Name</th><th class="l" data-k="g">Group</th><th data-k="last">Last</th><th data-k="chg">Net Chg</th><th data-k="pct">Chg %</th><th>1M</th><th data-k="m1">1M %</th><th class="l" data-k="r52">52W Range</th>
-            <th class="grp" data-k="mcap">Mkt Cap</th><th data-k="pe">P/E TTM</th><th data-k="fpe">P/E Fwd</th><th data-k="peg">PEG</th><th data-k="dy">Div Yld</th><th data-k="tgt">Tgt Upside</th><th class="l grp" data-k="st">Street</th><th class="l" data-k="tr">Trend</th>
+            <th class="grp" data-k="mcap">Mkt Cap</th><th data-k="pe">P/E TTM</th><th data-k="fpe">P/E Fwd</th><th data-k="peg">PEG</th><th data-k="dy">Div Yld</th><th data-k="tgt">Tgt Upside</th><th class="l grp" data-k="st" title="Wall Street analysts' consensus, with how many say buy · hold · sell">Street</th><th class="l" data-k="tr" title="BUY: price above its 50-day average and the 50-day above the 200-day. SELL: both below. HOLD: mixed.">Trend</th>
           </tr></thead>
           <tbody id="mostBody"></tbody>
         </table>
       </div>
     </section>
-  </main>
+  </section>
 
   <section class="page" id="pg-news" data-page="news" hidden aria-label="News">
     <div class="newsgrid">
@@ -441,10 +453,10 @@ canvas#rv { display: block; width: 100%; height: 260px; }
         <div class="ph"><h2 id="h-pulse"><span class="code">PULSE</span>Sector Check</h2><span class="sub">Click a row to read that sector's news</span></div>
         <div class="pb scroll">
           <table class="t">
-            <thead><tr><th class="l">Sector</th><th class="l">ETF</th><th class="opt">Last</th><th>1D</th><th class="opt">1M</th><th class="l">Trend</th><th class="opt">Stories</th></tr></thead>
+            <thead><tr><th class="l">Sector</th><th class="l">ETF</th><th class="opt">Last</th><th>1D</th><th>1M</th><th class="opt">Stories</th></tr></thead>
             <tbody id="pulseBody"></tbody>
           </table>
-          <p class="note">Trend is the same 50- and 200-day read used across the terminal. Full detail for every fund is on <a href="#sectors">Sectors</a>.</p>
+          <p class="note">How each sector's fund moved. Full detail for every fund is on <a href="#sectors">Sectors</a>.</p>
         </div>
       </section>
       <section class="panel" id="p-feed" aria-labelledby="h-feed">
@@ -474,17 +486,6 @@ canvas#rv { display: block; width: 100%; height: 260px; }
 
   <section class="page" id="pg-sectors" data-page="sectors" hidden aria-label="Sectors">
     <div class="sect">
-      <section class="panel" id="p-sig" aria-labelledby="h-sig">
-        <div class="ph"><h2 id="h-sig"><span class="code">SIG</span>Your ETFs · Buy · Hold · Sell</h2><span class="sub">Click a row to chart it against SPY</span></div>
-        <div class="pb scroll">
-          <table class="t">
-            <thead><tr><th class="l">Ticker</th><th class="l">Sector</th><th>Last</th><th>Net Chg</th><th>1D</th><th>1W</th><th>1M</th><th>YTD</th><th>vs 50D</th><th>vs 200D</th><th class="l">Trend</th><th class="l">News</th></tr></thead>
-            <tbody id="sigBody"></tbody>
-          </table>
-          <div class="sig-key"><span><b>vs 50D / vs 200D</b> = how far the price sits above (+) or below (−) its 50- and 200-day average.</span><span><b>BUY</b> = above the 50-day, and the 50-day above the 200-day (uptrend). <b>SELL</b> = both below (downtrend). <b>HOLD</b> = mixed.</span><span>ETFs have no analyst ratings, so this trend read is the only signal here. It's a rule of thumb, not advice.</span></div>
-        </div>
-      </section>
-
       <section class="panel" id="p-map" aria-labelledby="h-map">
         <div class="ph"><h2 id="h-map"><span class="code">SECT</span>Sector Map</h2>
           <div class="rngs" role="group" aria-label="Return period" id="mapRngs"></div>
@@ -543,11 +544,11 @@ canvas#rv { display: block; width: 100%; height: 260px; }
             <thead><tr>
               <th class="l" data-k="t">Ticker</th><th class="l">Name</th><th class="l" data-k="g">Group</th><th data-k="last">Last</th>
               <th data-k="1D">1D</th><th data-k="1W">1W</th><th data-k="1M">1M</th><th data-k="3M">3M</th><th data-k="YTD">YTD</th><th data-k="1Y">1Y</th>
-              <th data-k="rel">vs SPY 3M</th><th>1M</th><th class="l" data-k="r52">52W Range</th><th data-k="dy">Yield</th><th data-k="v50">vs 50D</th><th data-k="v200">vs 200D</th><th class="l" data-k="tr">Trend</th>
+              <th data-k="rel">vs SPY 3M</th><th>1M</th><th class="l" data-k="r52">52W Range</th><th data-k="dy">Yield</th>
             </tr></thead>
             <tbody id="boardBody"></tbody>
           </table>
-          <p class="note">Returns are price only, from daily closes. Yield is the last 12 months of distributions ÷ price. Trend: BUY above both averages in an uptrend, SELL below both in a downtrend, HOLD mixed.</p>
+          <p class="note">Returns are price only, from daily closes. Yield is the last 12 months of distributions ÷ price.</p>
         </div>
       </section>
     </div>
@@ -769,6 +770,36 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     $("sOpen").textContent = op == null ? "—" : fMoney(op, true) + " (" + fPct(op / cost * 100) + ")"; $("sOpen").className = "v " + cls(op);
   }
 
+  // ---------- Holding cards ----------
+  // Next earnings, how the stock's sector fund did today and over a month, and the analysts' target.
+  function renderCards() {
+    const el = $("hcards"), today = etYmd(new Date()), sector = Object.fromEntries(VS);
+    HOLD.forEach(h => {
+      const c = document.createElement("button"); c.type = "button"; c.className = "hcard";
+      c.addEventListener("click", () => { select(h.t); focusPanel("GP"); });
+      const top = document.createElement("div"); top.className = "top";
+      const b = document.createElement("b"); b.textContent = h.t;
+      const er = EVTS.find(e => e.tk === h.t && e.cat === "hold" && /earnings/i.test(e.t) && e.d >= today);
+      const w = document.createElement("span"); w.className = "when";
+      const n = er ? daysTo(er.d) : null;
+      w.textContent = er ? (n <= 0 ? "Reports today" : "Reports in " + n + "d") : "No date yet";
+      if (er && n <= 7) w.classList.add("soon");
+      top.append(b, w); c.appendChild(top);
+      const line = (k, v, cl) => { const d = document.createElement("div"), a = document.createElement("span"), z = document.createElement("span"); d.className = "ln"; a.textContent = k; z.textContent = v; if (cl) z.className = cl; d.append(a, z); c.appendChild(d); };
+      if (er) line("Earnings", ymdLabel(er.d) + " · " + er.when.split(" · ")[0].replace(/^Likely (.)/, (m, x) => x.toUpperCase()) + (er.c ? "" : "?"));
+      const etf = SEC[sector[h.t]];
+      if (etf) {
+        const d1 = ret(etf, "1D"); line(etf.t + " (sector) today", fPct(d1), cls(d1));
+        const lead = ret(h, "1M") != null && ret(etf, "1M") != null ? ret(h, "1M") - ret(etf, "1M") : null;
+        line("vs " + etf.t + " last month", lead == null ? "—" : fPct1(lead).replace("%", " pts"), cls(lead));
+      }
+      const F = h.fund || {};
+      if (F.target) { const u = (F.target / h.last - 1) * 100; line("Analyst target", fPx(F.target) + " " + fPct1(u), cls(u)); }
+      el.appendChild(c);
+    });
+  }
+  renderCards();
+
   // ---------- Tape ----------
   const MYETF = ["QQQ", "SMH", "SOXX", "IGV", "XBI", "KRE", "XHB", "ITB"].filter(t => SEC[t]).map(t => SEC[t]);
   const tapeList = HOLD.concat(MKTS.filter(m => ["^GSPC", "^IXIC", "^DJI", "^GSPTSE", "CAD=X"].includes(m.t)), MYETF, WATCH.filter(w => w.g === "mag7"));
@@ -840,6 +871,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     });
     WATCH.filter(w => grp === "all" || w.g === grp).slice().sort(cmp).forEach(w => {
       const tr = document.createElement("tr"); pickRow(tr, w.t); if (w.t === sel) tr.classList.add("on");
+      tr.addEventListener("click", () => focusPanel("GP"));
       cell(tr, tkCell(w.t), "l"); cell(tr, nmCell(w.name), "l"); cell(tr, GROUPS[w.g] || "", "l");
       cell(tr, fPx(w.last));
       cell(tr, (chg(w) > 0 ? "+" : "") + f2(chg(w)), cls(chg(w)));
@@ -1039,8 +1071,8 @@ canvas#rv { display: block; width: 100%; height: 260px; }
       const st = street(s);
       rows.push(["Street B/H/S", st ? st.k + " " + votesTxt(st.n) : "—"]);
     }
-    const tr = s.kind === "mkt" ? null : trend(s);
-    if (s.kind !== "mkt") rows.push(["Trend", tr ? tr.k : "—"], ["vs 50D · 200D", tr ? fPct1(tr.v50) + " · " + fPct1(tr.v200) : "—"]);
+    const tr = eq ? trend(s) : null;
+    if (eq) rows.push(["Trend", tr ? tr.k : "—"]);
     if (s.kind === "hold") rows.push(["Your shares", fx(s.shares, 4)], ["Your value", fMoney(s.shares * s.last)]);
     if (s.kind === "hold" && s.cost) rows.push(["Avg cost", f2(s.cost)], ["Open P&L", fWhole(s.shares * (s.last - s.cost)) + " " + fPct1((s.last / s.cost - 1) * 100)]);
     if (s.kind === "watch") rows.push(["Group", GROUPS[s.g] || ""]);
@@ -1050,7 +1082,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     rows.forEach(([k, v]) => { const d = document.createElement("div"), a = document.createElement("span"), b = document.createElement("span"); a.textContent = k; b.textContent = v; d.append(a, b); el.appendChild(d); });
     if (eq) {
       const n = document.createElement("p"); n.className = "gp-note";
-      n.textContent = "P/E uses Street (adjusted) EPS: TTM is the last 4 reported quarters, Fwd is consensus for the next 4 (next fiscal year if fewer are covered). NM = negative earnings. PEG, target and Street rating from Nasdaq. Trend: BUY above the 50-day average with the 50-day above the 200-day, SELL below both, HOLD mixed. Div yield = last 12 months of dividends ÷ price. — means no figure available.";
+      n.textContent = "Street = analysts' rating (buy·hold·sell votes). Trend = price vs its 50- and 200-day averages: BUY above both in an uptrend, SELL below both, HOLD mixed. NM = negative earnings.";
       el.appendChild(n);
     }
     if (s.kind === "etf" && s.about) { const n = document.createElement("p"); n.className = "gp-note"; n.textContent = s.name + ": " + s.about; el.appendChild(n); }
@@ -1071,8 +1103,8 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   }));
 
   // ---------- Pages ----------
-  // Four pages share the top bar, tape and command line. The hash picks the page, so the back button works.
-  const PAGES = ["terminal", "news", "schedule", "sectors"], drawn = {};
+  // Five pages share the top bar, tape and command line. The hash picks the page, so the back button works.
+  const PAGES = ["terminal", "watchlist", "news", "schedule", "sectors"], drawn = {};
   let page = "terminal";
   function showPage(p) {
     if (!PAGES.includes(p)) p = "terminal";
@@ -1084,7 +1116,9 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     if (p === "schedule" && !drawn.schedule) { drawn.schedule = 1; renderSchedule(); }
     if (p === "sectors" && !drawn.sectors) { drawn.sectors = 1; renderSectors(); }
     if (p === "news" && !drawn.news) { drawn.news = 1; renderNews(); }
-    if (p === "terminal") drawChart(); else if (p === "sectors") drawRv();
+    // One GP panel serves both stock pages: it moves next to the watchlist when that page is open.
+    if (p === "watchlist") $("gpSlotW").appendChild($("p-gp")); else if (p === "terminal") $("p-port").after($("p-gp"));
+    if (p === "terminal" || p === "watchlist") drawChart(); else if (p === "sectors") drawRv();
   }
   function goPage(p) {
     if (p === page) return;
@@ -1124,8 +1158,8 @@ canvas#rv { display: block; width: 100%; height: 260px; }
         const go = () => { setFeed(c); if (matchMedia("(max-width: 1099px)").matches) $("p-feed").scrollIntoView({ behavior: "smooth", block: "start" }); };
         tr.addEventListener("click", go); tr.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); } });
         cell(tr, i ? "" : label, "l"); cell(tr, tkCell(t), "l"); cell(tr, fPx(e.last), "opt");
-        const d1 = ret(e, "1D"), mm = ret(e, "1M"); cell(tr, fPct(d1), cls(d1)); cell(tr, fPct1n(mm), "opt " + cls(mm));
-        cell(tr, trendNode(e), "l"); cell(tr, i ? "" : String(feedCount(c)), "opt");
+        const d1 = ret(e, "1D"), mm = ret(e, "1M"); cell(tr, fPct(d1), cls(d1)); cell(tr, fPct1n(mm), cls(mm));
+        cell(tr, i ? "" : String(feedCount(c)), "opt");
         body.appendChild(tr);
       });
     });
@@ -1273,7 +1307,6 @@ canvas#rv { display: block; width: 100%; height: 260px; }
         const t = document.createElement("b"), n = document.createElement("span"), val = document.createElement("span");
         t.textContent = e.t; n.className = "tn"; n.textContent = e.name; val.className = "tv"; val.textContent = fPct(v);
         b.append(t, n, val);
-        const tg = trend(e); if (tg) b.appendChild(badge(tg.k));
         if (e.rel && e.rel.length) { const y = document.createElement("span"); y.className = "yours"; y.textContent = "YOURS: " + e.rel.join(" "); b.appendChild(y); }
         b.addEventListener("click", () => setRv(e.t, bench(e.t)));
         tiles.appendChild(b);
@@ -1442,8 +1475,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   }
   const GORDE = Object.keys(ETFG);
   const BSORT = { t: e => e.t, g: e => GORDE.indexOf(e.g), last: e => e.last, rel: e => { const a = ret(e, "3M"), b = ret(SEC.SPY || e, "3M"); return a == null || b == null ? null : a - b; },
-    r52: e => e.hi52 > e.lo52 ? (e.last - e.lo52) / (e.hi52 - e.lo52) : null, dy: e => (e.fund || {}).div == null ? null : e.fund.div / e.last * 100,
-    v50: e => (trend(e) || {}).v50, v200: e => (trend(e) || {}).v200, tr: e => { const r = trend(e); return r ? RK[r.k] * 1000 + r.v50 : null; } };
+    r52: e => e.hi52 > e.lo52 ? (e.last - e.lo52) / (e.hi52 - e.lo52) : null, dy: e => (e.fund || {}).div == null ? null : e.fund.div / e.last * 100 };
   RETS.forEach(r => BSORT[r] = e => ret(e, r));
   let bK = "g", bD = 1;
   function renderBoard() {
@@ -1459,7 +1491,6 @@ canvas#rv { display: block; width: 100%; height: 260px; }
       const rel = BSORT.rel(e); cell(tr, e.t === "SPY" ? "—" : fPct1n(rel), cls(rel));
       cell(tr, spark(e.daily, 64, 16)); cell(tr, range52(e), "l");
       const dy = BSORT.dy(e); cell(tr, dy == null ? "—" : dy ? dy.toFixed(2) + "%" : "None");
-      const tg = trend(e); cell(tr, fPct1n(tg && tg.v50), cls(tg && tg.v50)); cell(tr, fPct1n(tg && tg.v200), cls(tg && tg.v200)); cell(tr, trendNode(e), "l");
       body.appendChild(tr);
     });
   }
@@ -1467,30 +1498,8 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     const b = document.createElement("button"); b.type = "button"; b.className = "sort"; b.textContent = th.textContent; th.textContent = ""; th.appendChild(b);
     b.addEventListener("click", () => { const k = th.dataset.k; if (k === bK) bD = -bD; else { bK = k; bD = k === "t" || k === "g" ? 1 : -1; } renderBoard(); });
   });
-  // Your ETFs, in the order you listed them, with the trend read spelled out.
-  const SIGF = { QQQ: "mkt", SMH: "semi", SOXX: "semi", IGV: "soft", XBI: "bio", KRE: "banks", XHB: "housing", ITB: "housing" };
-  const SIGN = { QQQ: "Nasdaq 100", SMH: "Semiconductors", SOXX: "Semiconductors", IGV: "Software", XBI: "Biotech", KRE: "Regional banks", XHB: "Homebuilders", ITB: "Homebuilders" };
-  function renderSig() {
-    const body = $("sigBody"); body.textContent = "";
-    MYETF.forEach(e => {
-      const tr = document.createElement("tr"); tr.className = "pick"; tr.tabIndex = 0;
-      const go = () => setRv(e.t, bench(e.t));
-      tr.addEventListener("click", go); tr.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); } });
-      cell(tr, tkCell(e.t), "l"); cell(tr, SIGN[e.t] || e.name, "l").title = e.name; cell(tr, fPx(e.last));
-      cell(tr, (chg(e) > 0 ? "+" : "") + f2(chg(e)), cls(chg(e)));
-      ["1D", "1W", "1M", "YTD"].forEach(r => { const v = ret(e, r); cell(tr, r === "1D" ? fPct(v) : fPct1n(v), cls(v)); });
-      const tg = trend(e); cell(tr, fPct1n(tg && tg.v50), cls(tg && tg.v50)); cell(tr, fPct1n(tg && tg.v200), cls(tg && tg.v200));
-      cell(tr, trendNode(e), "l");
-      const c = SIGF[e.t], n = c ? feedCount(c) : 0, b = document.createElement("button");
-      b.type = "button"; b.className = "linkbtn"; b.textContent = n + " stories ›";
-      b.addEventListener("click", ev => { ev.stopPropagation(); goPage("news"); setFeed(c); window.scrollTo(0, 0); });
-      cell(tr, n ? b : "—", "l");
-      body.appendChild(tr);
-    });
-  }
   function renderSectors() {
     if (!ETFS.length) { $("heat").textContent = "No ETF data in this refresh. Run terminal/build.py."; return; }
-    renderSig();
     rangeButtons($("mapRngs"), RETS, mapR, r => { mapR = r; saveSect(); renderHeat(); });
     rangeButtons($("rvRngs"), ["1M", "3M", "YTD", "1Y"], rvR, r => { rvR = r; saveSect(); rvHover = -1; drawRv(); });
     renderHeat(); renderVs(); renderPairs(); renderBoard(); renderRvHead();
@@ -1502,7 +1511,8 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   const PAGEW = { NEWS: "news", CN: "news", SCHED: "schedule", SCHEDULE: "schedule", CAL: "schedule", SECT: "sectors", SECTORS: "sectors", ETF: "sectors", ETFS: "sectors", TERM: "terminal", HOME: "terminal" };
   function focusPanel(k) {
     const el = $(PANELS[k]); if (!el) return;
-    if (page !== "terminal") goPage("terminal");
+    const want = k === "MOST" || (k === "GP" && page === "watchlist") ? "watchlist" : "terminal";
+    if (page !== want) goPage(want);
     el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
     el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 900);
   }
@@ -1511,7 +1521,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     const words = raw.toUpperCase().replace(/<?GO>?/g, " ").replace(/\b(US|EQUITY)\b/g, " ").trim().split(/\s+/).filter(Boolean);
     if (!words.length) { msg("Type a ticker first. Try NVDA GP or HELP."); return; }
     const fn = words.find(w => PANELS[w] || PAGEW[w] || w === "HELP");
-    if (fn === "HELP") { msg("Holdings: " + HOLD.map(h => h.t).join(" ") + " · Watchlist: " + WATCH.length + " stocks · ETFs: " + ETFS.length + " (SPY QQQ SMH IGV XBI KRE XHB…) · Functions: PORT GP EVTS TOP WEI MOST · Pages: NEWS SCHED SECT · Ranges: 1D 5D 1M 3M 1Y"); return; }
+    if (fn === "HELP") { msg("Holdings: " + HOLD.map(h => h.t).join(" ") + " · Watchlist: " + WATCH.length + " stocks · ETFs: " + ETFS.length + " (SPY QQQ SMH IGV XBI KRE XHB…) · Functions: PORT GP EVTS TOP WEI · Pages: MOST (watchlist) NEWS SCHED SECT · Ranges: 1D 5D 1M 3M 1Y"); return; }
     const tk = words.find(w => SEC[w]);
     // ETFs open on the Sectors page against SPY unless GP is asked for; SECT plus any ticker does the same.
     if (tk && (fn === "SECT" || fn === "SECTORS" || fn === "ETF" || (!fn && SEC[tk].kind === "etf"))) {
