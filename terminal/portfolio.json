@@ -36,5 +36,54 @@
     ["GC=F", "GOLD"],
     ["CAD=X", "USD/CAD"],
     ["BTC-USD", "BITCOIN"]
-  ]
+  ],
+  "_etfs": "Each ETF: ticker, group (broad, sector, ind, rates), one-line description, and which of your holdings it contains.",
+  "etfs": [
+    ["SPY", "broad", "The 500 biggest US companies, weighted by size. The benchmark everything on this page is measured against.", []],
+    ["QQQ", "broad", "The 100 biggest non-financial Nasdaq stocks. Heavy in big tech, so it moves with the Mag 7.", ["AMD"]],
+    ["RSP", "broad", "Same 500 stocks, each at the same weight. When it beats SPY, the rally is spreading past the giants.", []],
+    ["IWM", "broad", "About 2,000 small US companies. More sensitive to interest rates and the US economy than the big names.", []],
+    ["XLK", "sector", "The S&P 500's tech stocks. Nvidia, Apple and Microsoft are most of it; AMD and Oracle are in here too.", ["AMD", "ORCL"]],
+    ["XLC", "sector", "Meta, Alphabet, Netflix and the phone and cable companies.", []],
+    ["XLY", "sector", "Things people want but can skip: Amazon, Tesla, Home Depot, restaurants and travel.", []],
+    ["XLP", "sector", "Things people buy anyway: food, drinks, household and personal care. PepsiCo and Coca-Cola are in it.", ["CELH", "ELF"]],
+    ["XLE", "sector", "Oil and gas producers and service companies. Exxon and Chevron are the biggest.", []],
+    ["XLF", "sector", "Big banks, card networks, insurers and brokers.", []],
+    ["XLV", "sector", "Drug makers, health insurers and medical device makers.", []],
+    ["XLI", "sector", "Aerospace, defense, machinery, railroads and airlines.", []],
+    ["XLB", "sector", "Chemicals, mining, steel and packaging.", []],
+    ["XLRE", "sector", "REITs: data centers, cell towers, warehouses and apartments.", []],
+    ["XLU", "sector", "Power and water companies. Now also a bet on AI data-center power demand.", []],
+    ["SMH", "ind", "About 25 of the biggest chip companies, US and foreign (TSMC and ASML included), weighted by size. Nvidia is the biggest weight.", ["AMD"]],
+    ["SOXX", "ind", "About 30 US-listed chip stocks with a cap on each one, so it's less top-heavy than SMH.", ["AMD"]],
+    ["IGV", "ind", "US software companies: Microsoft, Oracle, Salesforce, Palantir and the rest.", ["ORCL"]],
+    ["XBI", "ind", "Biotech at equal weight, so it's mostly small and mid-sized drug developers. Very sensitive to interest rates.", []],
+    ["KRE", "ind", "Regional US banks at equal weight. The place stress shows first: bad loans, commercial real estate, deposit flight.", []],
+    ["XHB", "ind", "Homebuilders plus building products, furnishings and home-improvement retailers. A wider housing bet than ITB.", []],
+    ["ITB", "ind", "Mostly the builders themselves (D.R. Horton, Lennar, PulteGroup, NVR). Moves with mortgage rates.", []],
+    ["TLT", "rates", "Long-term US government bonds. Rises when long-term rates fall, falls when they rise.", []],
+    ["LQD", "rates", "Bonds from companies rated BBB or better. Mostly moves with Treasury yields.", []],
+    ["HYG", "rates", "Junk bonds. When it lags LQD, lenders want more pay for risk and credit spreads are widening.", []]
+  ],
+  "pairs": [
+    ["RSP", "SPY", "Breadth", "Up: more stocks joining the rally. Down: a few giants carrying the market."],
+    ["IWM", "SPY", "Small vs large", "Up: bets on the US economy and lower rates. Down: money hiding in the big names."],
+    ["XLY", "XLP", "Offense vs defense", "Up: consumers spending freely, risk-on. Down: investors getting defensive."],
+    ["SMH", "SOXX", "Chip giants vs chips broadly", "Up: the biggest chip names (Nvidia, TSMC) leading. Down: the rest of the group catching up."],
+    ["IGV", "SMH", "Software vs chips", "Up: money rotating from AI hardware into software. Down: hardware still in charge."],
+    ["KRE", "XLF", "Regional vs big banks", "Down: stress building at smaller banks."],
+    ["XBI", "XLV", "Biotech vs big health care", "Up: more appetite for risk and hopes for lower rates."],
+    ["ITB", "SPY", "Housing vs market", "Up: the market expects lower mortgage rates."],
+    ["HYG", "LQD", "Junk vs safe credit", "Down: lenders asking more for risk, the same squeeze that hit CoreWeave in October."]
+  ],
+  "_news": "Headline feeds for the News page: each sector's ETFs plus a few of its biggest stocks, since searches on thin ETFs (KRE, XHB) return little. Your holdings are always included.",
+  "news": {
+    "semi": ["SMH", "SOXX", "NVDA", "TSM", "AVGO"],
+    "soft": ["IGV", "MSFT", "CRM", "NOW", "PLTR"],
+    "bio": ["XBI", "VRTX", "MRNA", "AMGN", "REGN"],
+    "banks": ["KRE", "KEY", "ZION", "CFG", "RF"],
+    "housing": ["ITB", "XHB", "DHI", "LEN", "PHM"],
+    "mkt": ["QQQ", "SPY", "DIA", "IWM"]
+  },
+  "vs": [["AMD", "SMH"], ["ORCL", "IGV"], ["CELH", "XLP"], ["ELF", "XLP"]]
 }
