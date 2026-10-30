@@ -1,19 +1,16 @@
 # CLAUDE.md
 
-## About me
+## Who I am
 
 **Shamos Hamel** is a long-term investor, AI enthusiast, researcher, lifelong learner and entrepreneur.
 
-What I do:
+## What I do
+
 - **Long-term investing**: researching companies, markets and investment theses with a multi-year view.
 - **AI & research**: exploring new AI tools and models, and digging deep into topics I care about.
 - **Entrepreneurship**: building ideas and side projects.
 - **Vibe coding**: building things quickly with AI help. I'm not necessarily a traditional software engineer.
 - **Design & content creation**: designing visuals and creating content for social media and other channels.
-
-## About this repo
-
-`poopfartporker` is my **personal sandbox** for experiments, prototypes, one-off scripts, research notes and trying out Claude's capabilities. Nothing here is production-critical, so it's fine to try things.
 
 ## How to work with me
 
