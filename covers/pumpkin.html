@@ -1,15 +1,19 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8">
+<html>
+<head>
+<meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=block" rel="stylesheet">
 <style>
-html,body{margin:0;width:1080px;height:1080px;overflow:hidden;background:#FFF7DF}
-.frame{position:absolute;inset:40px;border:24px solid #F2862A;border-radius:60px;box-sizing:border-box}
-.wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-h1{margin:0;font-family:'Fredoka',sans-serif;font-weight:700;color:#3B2A5C;font-size:250px;line-height:1;white-space:nowrap}
-</style></head><body>
-<div class="frame"></div>
-<div class="wrap"><h1 id="t">Pumpkin</h1></div>
-<script>
-document.fonts.ready.then(()=>{const t=document.getElementById('t');let s=250;while(t.scrollWidth<840&&s<400){s+=2;t.style.fontSize=s+'px';}while(t.scrollWidth>840){s-=2;t.style.fontSize=s+'px';}});
-</script>
-</body></html>
+  /* Colours: blue, pink, purple only (from CLAUDE.md "Colours for new designs") */
+  :root { --purple:#4B2A86; --pink:#FF7EB9; --blue:#3D8BFD; }
+  html,body{margin:0;padding:0;}
+  body{width:1080px;height:1080px;background:var(--purple);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;font-family:'Fredoka',sans-serif;}
+  .frame{position:absolute;inset:40px;border:16px solid var(--blue);border-radius:48px;}
+  h1{margin:0;color:var(--pink);font-size:215px;font-weight:700;line-height:1;letter-spacing:2px;text-align:center;}
+</style>
+</head>
+<body>
+  <div class="frame"></div>
+  <h1>Pumpkin</h1>
+</body>
+</html>
