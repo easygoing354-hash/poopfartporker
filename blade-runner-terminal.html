@@ -575,7 +575,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   </section>
 
   <footer class="statusbar">
-    <span>Prices: Yahoo Finance, end of day, refreshed weekdays at 8:00 AM ET. Information only, not investment advice. More headlines on <a href="#news">News</a>; full calendar on <a href="#schedule">Schedule</a>; sector ETFs on <a href="#sectors">Sectors</a>.</span>
+    <span>Prices: Yahoo Finance, refreshed weekdays just after the open (9:40 AM ET) and the close (4:15 PM ET). Information only, not investment advice. More headlines on <a href="#news">News</a>; full calendar on <a href="#schedule">Schedule</a>; sector ETFs on <a href="#sectors">Sectors</a>.</span>
     <span class="motto">MORE HUMAN THAN HUMAN</span>
   </footer>
 </div>
@@ -644,25 +644,32 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   const daysTo = d => Math.round((Date.parse(d + "T12:00:00Z") - Date.parse(etYmd(new Date()) + "T12:00:00Z")) / 864e5);
 
   // ---------- Clock, freshness, next refresh ----------
-  // The refresh starts weekdays at 7:45 AM ET and takes a few minutes, so prices are up by 8:00.
-  const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], RUN = 7 * 60 + 45;
+  // The refresh runs twice each weekday: 9:35 AM ET just after the open (prices up by 9:40) and 4:10 PM ET just after the close (up by 4:15).
+  const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], RUNS = [9 * 60 + 35, 16 * 60 + 10], READY = [9 * 60 + 40, 16 * 60 + 15];
   const isWk = d => d > 0 && d < 6;
   function etNow() { const p = etParts(new Date()); return { p, wd: WD.indexOf(p.weekday), min: +p.hour * 60 + +p.minute }; }
-  function minsToNext() {
-    const { wd, min } = etNow(); let m = 8 * 60 - min, d = wd;
-    if (m <= 0 || !isWk(d)) { do { m += 1440; d = (d + 1) % 7; } while (!isWk(d)); }
-    return m;
+  // Minutes until the next "prices up" time, and which one it is.
+  function nextReady() {
+    const { wd, min } = etNow();
+    for (let k = 0; k < 8; k++) {
+      const d = (wd + k) % 7; if (!isWk(d)) continue;
+      for (const r of READY) { const m = k * 1440 + r - min; if (m > 0) return { m, r }; }
+    }
+    return { m: 1440, r: READY[0] };
   }
   function minsSinceLastRun() {
-    const { wd, min } = etNow(); let a = min - RUN, d = wd;
-    if (a < 0 || !isWk(d)) { do { a += 1440; d = (d + 6) % 7; } while (!isWk(d)); }
-    return a;
+    const { wd, min } = etNow();
+    for (let k = 0; k < 8; k++) {
+      const d = (wd - k + 7) % 7; if (!isWk(d)) continue;
+      for (const r of RUNS.slice().reverse()) { const a = k * 1440 + min - r; if (a >= 0) return a; }
+    }
+    return 0;
   }
   function tickClock() {
-    const { p } = etNow(), mins = minsToNext();
+    const { p } = etNow(), nx = nextReady(), mins = nx.m;
     $("time").textContent = p.hour + ":" + p.minute + ":" + p.second + " ET";
     const left = mins >= 1440 ? Math.floor(mins / 1440) + "D " + Math.floor(mins % 1440 / 60) + "H" : Math.floor(mins / 60) + "H " + pad(mins % 60) + "M";
-    $("next").textContent = "NEXT REFRESH 08:00 ET · IN " + left;
+    $("next").textContent = "NEXT REFRESH " + pad(Math.floor(nx.r / 60)) + ":" + pad(nx.r % 60) + " ET · IN " + left;
   }
   tickClock(); setInterval(tickClock, 1000);
   if (D.generated) {
