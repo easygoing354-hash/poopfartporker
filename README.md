@@ -36,9 +36,10 @@ Try: `save a note called groceries: eggs, milk`, then `what's in my groceries no
 
 ![Blade Runner terminal](terminal/preview.png)
 
-`blade-runner-terminal.html` is a Bloomberg-style dashboard for the Blade Runner portfolio (AMD, CELH, ELF, ORCL) and its watchlist. It has five pages (tabs, or `#terminal`, `#watchlist`, `#news`, `#schedule`, `#sectors` in the URL):
+`blade-runner-terminal.html` is a Bloomberg-style dashboard for the Blade Runner portfolio (AMD, CELH, ELF, ORCL) and its watchlist. It has six pages (tabs, or `#terminal`, `#analysis`, `#watchlist`, `#news`, `#schedule`, `#sectors` in the URL):
 
-- **Portfolio**: holdings with a card per stock (next earnings, its sector fund today, how it did against that fund last month, analyst target), price chart, holdings news, upcoming dates, markets.
+- **Portfolio**: holdings with a card per stock (next earnings, its sector fund today, how it did against that fund last month, analyst target), price chart, holdings news, upcoming dates, markets. For five days after a holding reports, an earnings recap card shows the price reaction and the headlines since. **Edit holdings** changes share counts, average cost and which stocks you hold (any tracked stock); edits are saved in that browser only.
+- **Analysis**: what today's holdings would have been worth over 1M to 1Y against SPY and QQQ, plus risk: typical daily move, volatility, beta, concentration, a correlation grid and each stock's share of the portfolio's swings.
 - **Watchlist**: the 88-stock watchlist with the same price chart. Every stock (holdings and watchlist) shows a Street rating (analyst Buy/Hold/Sell consensus) and a Trend signal (price vs its 50- and 200-day averages).
 - **News**: headlines for the holdings and for each sector (semis, software, biotech, regional banks, homebuilders, market), filterable, with a sector check on the side.
 - **Schedule**: earnings, Fed and macro dates, grouped by week.
@@ -48,6 +49,7 @@ Files:
 
 - `terminal/portfolio.json`: share counts, watchlist groups, market instruments, ETFs (with descriptions), spread pairs and news feeds.
 - `terminal/events.json`: upcoming earnings and macro dates shown on the Schedule page.
+- `terminal/alerts.py`: run after `build.py`; prints phone alerts (a holding moving 5%+ in a day, earnings within 3 days, an analyst consensus change) and keeps what it already sent in a small `tm-state` block at the top of the page.
 - `terminal/build.py`: pulls prices, charts and headlines from Yahoo Finance, plus valuation ratios and analyst ratings from Nasdaq, for every stock (holdings and watchlist get the same set) and ETF, and bakes them into the page. Standard library only. To add a stock, put its ticker in a `watchlist` group in `portfolio.json`; to add an ETF, add a row to `etfs`.
 
 Refresh by hand:
@@ -56,4 +58,4 @@ Refresh by hand:
 python3 terminal/build.py
 ```
 
-Scheduled tasks run it every weekday at 9:35 AM ET (just after the open) and 4:10 PM ET (just after the close) and republish the artifact. It does not commit, so the data baked into the copy here is whatever was last committed by hand.
+Scheduled tasks run it, then `alerts.py`, every weekday hour from 9:35 AM to 3:35 PM ET plus 4:10 PM (just after the close), push any alerts to your phone and republish the artifact. It does not commit, so the data baked into the copy here is whatever was last committed by hand.
