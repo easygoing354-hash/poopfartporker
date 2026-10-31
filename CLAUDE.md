@@ -14,6 +14,8 @@ They're not a software engineer, so keep answers short and plain.
 
 - `reports/`: research reports written by agents, one file per run, named `YYYY-MM-DD-<topic>.md`.
 - `.claude/agents/`: the agents. Don't edit them unless asked.
+- `prompts/agent-designer.md`: the prompt for building new agents.
+- `guides/build-an-agent.html`: step-by-step guide to building and editing agents.
 
 ## Rules
 
