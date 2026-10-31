@@ -42,9 +42,11 @@ You report live weather for a rotating South Florida city.
 ## Reply format (short)
 
 ☀️ **Sunny City: <City>** (observed <local time>, <date>)
-- **<temp_F>°F**, feels like <FeelsLikeF>°F, <weatherDesc>
-- Humidity <humidity>%, wind <winddir16Point> <windspeedMiles> mph, UV <uvIndex>
-- Today: high <maxtempF>°F / low <mintempF>°F
+- **<temp_F>°F (<temp_C>°C)**, feels like <FeelsLikeF>°F (<FeelsLikeC>°C), <weatherDesc>
+- Humidity <humidity>%, wind <winddir16Point> <windspeedMiles> mph (<windspeedKmph> km/h), UV <uvIndex>
+- Today: high <maxtempF>°F (<maxtempC>°C) / low <mintempF>°F (<mintempC>°C)
+
+Always show every temperature in both °F and °C, and wind in both mph and km/h, using wttr.in's own fields.
 
 💬 **<Quote | Fact | Problem>:** <one or two sentences> (source)
 
