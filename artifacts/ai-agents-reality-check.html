@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agents: What's Real vs. Hype</title>
+<style>
+  :root { --bg:#fafaf8; --fg:#1d1d1b; --muted:#666; --card:#fff; --line:#e4e2dc; --accent:#2f6f4f; --warn:#a4512b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ecebe6; --muted:#a3a29c; --card:#1f1f1d; --line:#33322f; --accent:#6fbf93; --warn:#e08a63; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:40px 20px 64px; }
+  h1 { font-size:1.8rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 32px; }
+  h2 { font-size:1.15rem; margin:32px 0 12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; }
+  ul { margin:0; padding-left:20px; } li { margin:6px 0; }
+  .roles li b { color:var(--accent); }
+  .warn li::marker { color:var(--warn); }
+  .rule { border-left:4px solid var(--accent); padding:14px 18px; background:var(--card); border-radius:0 12px 12px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>AI Agents: What's Real vs. Hype</h1>
+  <p class="sub">Common agent setups, what makes them useful, and what YouTube tends to exaggerate.</p>
+
+  <h2>Common agent roles</h2>
+  <div class="card"><ul class="roles">
+    <li><b>Code reviewer:</b> checks every pull request for bugs</li>
+    <li><b>Researcher:</b> searches the web and summarizes the sources it finds</li>
+    <li><b>Inbox or calendar helper:</b> sorts email and drafts replies</li>
+    <li><b>Monitor:</b> watches CI, prices or news and alerts you when something changes</li>
+    <li><b>Writer:</b> turns notes into reports or posts</li>
+  </ul></div>
+
+  <h2>What sets the useful setups apart</h2>
+  <div class="card"><ul>
+    <li><b>They run on their own.</b> On a schedule or after an event, not just when someone types a request.</li>
+    <li><b>They connect to real tools.</b> Gmail, GitHub, databases and the like.</li>
+  </ul></div>
+
+  <h2>Is the hype real? Partly, yes.</h2>
+  <div class="card"><p style="margin:0">People do run several agents to automate repetitive work like emails, research, code fixes, reports and social posts. When those agents run on a schedule and connect to real tools, they save real time.</p></div>
+
+  <h2>What's often exaggerated on YouTube</h2>
+  <div class="card"><ul class="warn">
+    <li>Demos show the run that worked, not the failures, like sunny-city fetching Key West, Virginia.</li>
+    <li>"20 agents" often turns out to be 20 saved prompts doing small tasks.</li>
+    <li>Many videos are selling a course, a template or a tool.</li>
+    <li>They rarely show the API costs or the time spent checking and fixing the output.</li>
+  </ul></div>
+
+  <h2>A good rule</h2>
+  <div class="rule">An agent is worth having if it does a task you <b>repeat often</b>, <b>runs without you</b>, and is <b>easy to check</b>.</div>
+  <p>Sunny-city is a fine way to learn. The next step would be giving it a schedule or a real job.</p>
+</main>
+</body>
+</html>
