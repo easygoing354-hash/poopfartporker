@@ -1,34 +1,44 @@
-<title>Tony Montana's Terminal</title>
+<title>Blade Runner</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: a Bloomberg-style terminal. Black glass, amber type, command line on top, function panels
+/* Theme: Blade Runner at golden-hour night. Navy-to-indigo sky with a low sunset glow, neon cyan type,
+   hot-pink keys, soft neon glow and faint scanlines. (Variable names like --amber are kept so the
+   charts keep working; they now hold the neon colors.)
+   Layout: a Bloomberg-style terminal, command line on top, function panels
    (PORT / GP / EVTS / WEI / TOP / MOST) in a grid that stacks to one column on phones.
    Deliberately single-theme (terminals are dark), with every color set explicitly. */
 :root {
-  --bg: #000000;
-  --panel: #07080a;
-  --hdr: #1b1e25;
-  --line: #2a2e37;
-  --row: #14161b;
-  --fg: #e9e4d8;
-  --muted: #8a8f99;
-  --amber: #fb8b1e;
-  --amber-dim: #7a4510;
-  --key: #f5cf45;
-  --key-fg: #1a1400;
-  --up: #3fd47a;
-  --down: #ff4a3d;
-  --sel: #1d2a44;
+  --bg: #070b1f;
+  --panel: #0b1230;
+  --hdr: #151c48;
+  --line: #26326e;
+  --row: #111a40;
+  --fg: #e6ecff;
+  --muted: #8e99c8;
+  --amber: #3fe0ff;
+  --amber-dim: #1d5c80;
+  --key: #ff4fb3;
+  --key-fg: #1a0012;
+  --up: #35f2c2;
+  --down: #ff4d6d;
+  --sel: #24286a;
+  --sun: #ffad5a;
+  --font-title: "Orbitron", var(--font-label);
   --font-label: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 90% 45% at 50% -8%, rgba(255, 150, 70, .30), rgba(255, 79, 179, .12) 45%, transparent 75%),
+    linear-gradient(180deg, #1d1450 0, #0d1236 380px, var(--bg) 900px);
+  background-attachment: fixed;
+  min-height: 100vh;
   color: var(--fg);
   font-family: var(--font-data);
   font-size: 13px;
@@ -40,6 +50,12 @@ body {
 table, input, button { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
+/* Faint CRT scanlines over everything */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .18) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
 :focus-visible { outline: 2px solid var(--key); outline-offset: 1px; }
 
 .term { display: flex; flex-direction: column; gap: 6px; max-width: 1600px; margin: 0 auto; }
@@ -51,8 +67,11 @@ a { color: inherit; }
 }
 .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .brand h1 {
-  margin: 0; font-family: var(--font-label); font-weight: 700; font-size: 26px;
-  letter-spacing: .06em; color: var(--amber); text-transform: uppercase; text-wrap: balance;
+  margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 28px;
+  letter-spacing: .14em; color: var(--sun); text-transform: uppercase; text-wrap: balance;
+  background: linear-gradient(90deg, var(--sun), var(--key) 55%, var(--amber));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 8px rgba(255, 79, 179, .55));
 }
 .brand .acct { font-family: var(--font-label); font-size: 14px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
 .clock { font-variant-numeric: tabular-nums; display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: baseline; }
@@ -85,6 +104,7 @@ a { color: inherit; }
 /* Function keys */
 .fkeys { display: flex; flex-wrap: wrap; gap: 4px; }
 .fkey {
+  box-shadow: 0 0 8px rgba(255, 79, 179, .45);
   background: var(--key); color: var(--key-fg); border: 0; padding: 3px 10px;
   font-family: var(--font-label); font-weight: 700; letter-spacing: .06em; font-size: 14px;
 }
@@ -97,14 +117,14 @@ a { color: inherit; }
   .grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: "port gp" "news side"; }
   #p-port { grid-area: port; } #pg-terminal #p-gp { grid-area: gp; } #p-news { grid-area: news; } #p-side { grid-area: side; }
 }
-.panel { background: var(--panel); border: 1px solid var(--line); min-width: 0; display: flex; flex-direction: column; transition: border-color .3s; }
-.panel.flash { border-color: var(--key); }
+.panel { background: var(--panel); border: 1px solid var(--line); box-shadow: 0 0 14px rgba(63, 224, 255, .07), inset 0 1px 0 rgba(63, 224, 255, .08); min-width: 0; display: flex; flex-direction: column; transition: border-color .3s; }
+.panel.flash { border-color: var(--key); box-shadow: 0 0 16px rgba(255, 79, 179, .45); }
 .ph {
   display: flex; align-items: center; justify-content: space-between; gap: 6px 8px; flex-wrap: wrap;
-  background: var(--hdr); padding: 4px 8px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, var(--hdr), #1e1850); padding: 4px 8px; border-bottom: 1px solid var(--line);
 }
 .ph h2 { margin: 0; font-family: var(--font-label); font-weight: 600; font-size: 16px; letter-spacing: .06em; text-transform: uppercase; color: var(--fg); }
-.ph h2 .code { color: var(--amber); margin-right: 8px; }
+.ph h2 .code { color: var(--amber); margin-right: 8px; text-shadow: 0 0 6px rgba(63, 224, 255, .7); }
 .ph .sub { color: var(--muted); font-size: 12px; }
 .pb { padding: 8px; min-width: 0; }
 .side { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -132,9 +152,9 @@ table.t { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-
 .t th[aria-sort="descending"] button.sort::after { content: " \25BC"; font-size: 9px; }
 .t th[aria-sort="ascending"] button.sort::after { content: " \25B2"; font-size: 9px; }
 .t tbody tr.pick { cursor: pointer; }
-.t tbody tr.pick:hover td { background: #10131a; }
+.t tbody tr.pick:hover td { background: #18215a; }
 .t tbody tr.on td { background: var(--sel); }
-.tk { color: var(--amber); font-weight: 600; }
+.tk { color: var(--amber); font-weight: 600; text-shadow: 0 0 5px rgba(63, 224, 255, .45); }
 .nm { color: var(--fg); max-width: 18ch; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
 .up { color: var(--up); }
 .down { color: var(--down); }
@@ -152,7 +172,7 @@ table.t { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-
 /* Chart */
 .gp-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; margin-bottom: 6px; }
 .gp-head .big { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.gp-head .tkn { font-family: var(--font-label); font-size: 20px; font-weight: 700; color: var(--amber); letter-spacing: .04em; }
+.gp-head .tkn { font-family: var(--font-label); font-size: 20px; font-weight: 700; color: var(--amber); text-shadow: 0 0 8px rgba(63, 224, 255, .6); letter-spacing: .04em; }
 .gp-head .name { color: var(--muted); }
 .rngs { display: flex; gap: 4px; }
 .rngb { background: transparent; border: 1px solid var(--line); color: var(--fg); padding: 2px 8px; }
@@ -203,7 +223,7 @@ canvas#gp { display: block; width: 100%; height: 300px; }
   border-top: 1px solid var(--amber-dim); padding-top: 6px; color: var(--muted); font-size: 12px;
 }
 .statusbar a { color: var(--amber); }
-.statusbar .motto { color: var(--amber); font-family: var(--font-label); font-weight: 700; letter-spacing: .3em; font-size: 14px; }
+.statusbar .motto { color: var(--sun); text-shadow: 0 0 8px rgba(255, 173, 90, .6); font-family: var(--font-label); font-weight: 700; letter-spacing: .3em; font-size: 14px; }
 
 /* Pages: Terminal, Schedule, Sectors. One page shows at a time; the URL hash (#schedule, #sectors) picks it. */
 .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--amber-dim); overflow-x: auto; }
@@ -237,7 +257,7 @@ canvas#gp { display: block; width: 100%; height: 300px; }
 .week .ph small { color: var(--muted); font-size: 12px; }
 .ev { display: grid; grid-template-columns: 4px 56px minmax(0, 1fr); gap: 0 12px; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--row); }
 .ev:last-child { border-bottom: 0; }
-.ev.held { background: rgba(251, 139, 30, .08); }
+.ev.held { background: rgba(63, 224, 255, .07); }
 .ev.past { opacity: .45; }
 .imp { align-self: stretch; }
 .imp.H { background: var(--down); } .imp.M { background: var(--amber); } .imp.L { background: var(--line); }
@@ -318,7 +338,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
 <div class="term">
   <header class="topbar">
     <div class="brand">
-      <h1>Tony Montana's Terminal</h1>
+      <h1>Blade Runner</h1>
       <span class="acct">Acct T.MONTANA · AMD · CELH · ELF · ORCL</span>
     </div>
     <div class="clock">
