@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh the market data baked into tony-montanas-terminal.html.
+"""Refresh the market data baked into blade-runner-terminal.html.
 
 Pulls prices, intraday bars, a year of daily closes and headlines from Yahoo
 Finance's public chart and search endpoints, and the same valuation ratios and
@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-PAGE = HERE.parent / "tony-montanas-terminal.html"
+PAGE = HERE.parent / "blade-runner-terminal.html"
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
 NASDAQ_UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
              "Accept": "application/json"}

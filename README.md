@@ -34,7 +34,9 @@ Try: `save a note called groceries: eggs, milk`, then `what's in my groceries no
 
 ## Blade Runner (terminal)
 
-`tony-montanas-terminal.html` is a Bloomberg-style dashboard for the Tony Montana portfolio (AMD, CELH, ELF, ORCL) and its watchlist. It has five pages (tabs, or `#terminal`, `#watchlist`, `#news`, `#schedule`, `#sectors` in the URL):
+![Blade Runner terminal](terminal/preview.png)
+
+`blade-runner-terminal.html` is a Bloomberg-style dashboard for the Blade Runner portfolio (AMD, CELH, ELF, ORCL) and its watchlist. It has five pages (tabs, or `#terminal`, `#watchlist`, `#news`, `#schedule`, `#sectors` in the URL):
 
 - **Portfolio**: holdings with a card per stock (next earnings, its sector fund today, how it did against that fund last month, analyst target), price chart, holdings news, upcoming dates, markets.
 - **Watchlist**: the 88-stock watchlist with the same price chart. Every stock (holdings and watchlist) shows a Street rating (analyst Buy/Hold/Sell consensus) and a Trend signal (price vs its 50- and 200-day averages).
