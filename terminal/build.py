@@ -5,7 +5,7 @@ Pulls prices, intraday bars, a year of daily closes and headlines from Yahoo
 Finance's public chart and search endpoints, and the same valuation ratios and
 analyst buy/hold/sell counts from Nasdaq for every stock (holdings and watchlist
 alike), plus the sector ETFs, then rewrites the JSON block inside the page.
-Standard library only. Meant to run once a day at 8:00 AM ET.
+Standard library only. Meant to run each weekday just after the open (9:35 AM ET) and the close (4:10 PM ET).
 
     python3 terminal/build.py
 """
