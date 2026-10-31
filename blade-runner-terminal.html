@@ -114,9 +114,31 @@ body::after {
 /* Grid of panels */
 .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 @media (min-width: 1100px) {
-  .grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: "port gp" "news side"; }
-  #p-port { grid-area: port; } #pg-terminal #p-gp { grid-area: gp; } #p-news { grid-area: news; } #p-side { grid-area: side; }
+  .grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
 }
+/* The front page is split into three parts (Portfolio, My Stocks, Markets); only one shows at a time. */
+#pg-terminal[data-sub="1"] > [data-part]:not([data-part="1"]),
+#pg-terminal[data-sub="2"] > [data-part]:not([data-part="2"]),
+#pg-terminal[data-sub="3"] > [data-part]:not([data-part="3"]) { display: none; }
+.pager {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap;
+  background: var(--panel); border: 1px solid var(--line); padding: 5px 6px;
+}
+.pgbtn {
+  background: transparent; border: 1px solid var(--amber-dim); color: var(--amber); padding: 4px 14px;
+  font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; font-size: 15px; text-transform: uppercase;
+}
+.pgbtn:hover:not(:disabled) { border-color: var(--amber); box-shadow: 0 0 8px rgba(63, 224, 255, .4); }
+.pgbtn:disabled { opacity: .3; cursor: default; }
+.pgsteps { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.pgsteps a {
+  font-family: var(--font-label); font-weight: 700; letter-spacing: .08em; font-size: 14px; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; padding: 3px 10px; border: 1px solid transparent;
+}
+.pgsteps a b { color: var(--key); margin-right: 5px; }
+.pgsteps a:hover { color: var(--fg); }
+.pgsteps a[aria-current="step"] { color: var(--amber); border-color: var(--amber-dim); background: var(--row); text-shadow: 0 0 6px rgba(63, 224, 255, .5); }
+@media (max-width: 600px) { .pgbtn { padding: 4px 10px; flex: 1; } .pgsteps { order: -1; width: 100%; } .pgsteps a { padding: 3px 6px; } }
 .panel { background: var(--panel); border: 1px solid var(--line); box-shadow: 0 0 14px rgba(63, 224, 255, .07), inset 0 1px 0 rgba(63, 224, 255, .08); min-width: 0; display: flex; flex-direction: column; transition: border-color .3s; }
 .panel.flash { border-color: var(--key); box-shadow: 0 0 16px rgba(255, 79, 179, .45); }
 .ph {
@@ -308,7 +330,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
 .rate.SELL { color: #fff; background: var(--down); border-color: var(--down); }
 .votes { color: var(--muted); font-size: 11px; margin-left: 5px; }
 /* One card per holding under PORT: next earnings, how its sector did today, analysts' target. */
-.hcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+.hcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 @media (min-width: 520px) { .hcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .hcard { background: var(--row); border: 1px solid var(--line); border-left: 3px solid var(--amber); padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; text-align: left; color: var(--fg); }
 .hcard:hover { border-color: var(--muted); border-left-color: var(--amber); }
@@ -378,8 +400,17 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     <a href="#sectors" data-page="sectors">Sectors<span>ETFs</span></a>
   </nav>
 
-  <main class="grid" id="pg-terminal" data-page="terminal">
-    <section class="panel" id="p-port" aria-labelledby="h-port">
+  <main class="grid" id="pg-terminal" data-page="terminal" data-sub="1">
+    <nav class="pager" aria-label="Front page parts">
+      <button class="pgbtn" type="button" data-step="-1">&lsaquo; Prev</button>
+      <div class="pgsteps">
+        <a href="#terminal" data-k="terminal"><b>1</b>Portfolio</a>
+        <a href="#stocks" data-k="stocks"><b>2</b>My Stocks</a>
+        <a href="#markets" data-k="markets"><b>3</b>Markets</a>
+      </div>
+      <button class="pgbtn" type="button" data-step="1">Next &rsaquo;</button>
+    </nav>
+    <section class="panel" id="p-port" data-part="1" aria-labelledby="h-port">
       <div class="ph"><h2 id="h-port"><span class="code">1) PORT</span>Holdings</h2><span class="sub" id="portSub">—</span></div>
       <div class="pb">
         <div class="summary">
@@ -399,11 +430,10 @@ canvas#rv { display: block; width: 100%; height: 260px; }
             <tbody id="portBody"></tbody>
           </table>
         </div>
-        <div class="hcards" id="hcards"></div>
       </div>
     </section>
 
-    <section class="panel" id="p-gp" aria-labelledby="h-gp">
+    <section class="panel" id="p-gp" data-part="1" aria-labelledby="h-gp">
       <div class="ph"><h2 id="h-gp"><span class="code">2) GP</span>Price Graph</h2>
         <div class="rngs" role="group" aria-label="Range">
           <button class="rngb" type="button" data-r="1D">1D</button>
@@ -428,26 +458,28 @@ canvas#rv { display: block; width: 100%; height: 260px; }
       </div>
     </section>
 
-    <section class="panel" id="p-news" aria-labelledby="h-news">
-      <div class="ph"><h2 id="h-news"><span class="code">3) TOP</span>Top News · Your Holdings</h2><button type="button" class="linkbtn" data-go="news" id="allNews">All news ›</button></div>
-      <div class="pb"><ul class="news" id="news"></ul></div>
+    <section class="panel" id="p-hold" data-part="2" aria-labelledby="h-hold">
+      <div class="ph"><h2 id="h-hold"><span class="code">3) HOLD</span>My Stocks</h2><span class="sub">Click a card to chart it</span></div>
+      <div class="pb"><div class="hcards" id="hcards"></div></div>
+    </section>
+    <section class="panel" id="p-evts" data-part="2" aria-labelledby="h-evts">
+      <div class="ph"><h2 id="h-evts"><span class="code">4) EVTS</span>Coming Up</h2><button type="button" class="linkbtn" data-go="schedule">Full schedule ›</button></div>
+      <div class="pb"><ul class="evts" id="evts"></ul></div>
     </section>
 
-    <div class="side" id="p-side">
-      <section class="panel" id="p-evts" aria-labelledby="h-evts">
-        <div class="ph"><h2 id="h-evts"><span class="code">4) EVTS</span>Coming Up</h2><button type="button" class="linkbtn" data-go="schedule">Full schedule ›</button></div>
-        <div class="pb"><ul class="evts" id="evts"></ul></div>
-      </section>
-      <section class="panel" id="p-wei" aria-labelledby="h-wei">
-        <div class="ph"><h2 id="h-wei"><span class="code">5) WEI</span>Markets</h2><span class="sub">Click to chart 1M</span></div>
-        <div class="pb scroll">
-          <table class="t">
-            <thead><tr><th class="l">Instrument</th><th>Last</th><th>Net Chg</th><th>% Chg</th><th>1M</th></tr></thead>
-            <tbody id="weiBody"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+    <section class="panel" id="p-news" data-part="3" aria-labelledby="h-news">
+      <div class="ph"><h2 id="h-news"><span class="code">5) TOP</span>Top News · Your Holdings</h2><button type="button" class="linkbtn" data-go="news" id="allNews">All news ›</button></div>
+      <div class="pb"><ul class="news" id="news"></ul></div>
+    </section>
+    <section class="panel" id="p-wei" data-part="3" aria-labelledby="h-wei">
+      <div class="ph"><h2 id="h-wei"><span class="code">6) WEI</span>Markets</h2><span class="sub">Click to chart 1M</span></div>
+      <div class="pb scroll">
+        <table class="t">
+          <thead><tr><th class="l">Instrument</th><th>Last</th><th>Net Chg</th><th>% Chg</th><th>1M</th></tr></thead>
+          <tbody id="weiBody"></tbody>
+        </table>
+      </div>
+    </section>
 
   </main>
 
@@ -1125,9 +1157,19 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   // ---------- Pages ----------
   // Five pages share the top bar, tape and command line. The hash picks the page, so the back button works.
   const PAGES = ["terminal", "watchlist", "news", "schedule", "sectors"], drawn = {};
-  let page = "terminal";
+  // The Portfolio page has three parts, each with its own hash so Back/Forward work: #terminal, #stocks, #markets.
+  const SUBS = ["terminal", "stocks", "markets"];
+  let page = "terminal", cur = "terminal";
+  function showSub(k) {
+    const i = SUBS.indexOf(k);
+    $("pg-terminal").dataset.sub = String(i + 1);
+    document.querySelectorAll(".pgsteps a").forEach(a => { if (a.dataset.k === k) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current"); });
+    document.querySelectorAll(".pgbtn").forEach(b => { b.disabled = !SUBS[i + +b.dataset.step]; });
+  }
   function showPage(p) {
-    if (!PAGES.includes(p)) p = "terminal";
+    if (!PAGES.includes(p) && !SUBS.includes(p)) p = "terminal";
+    cur = p;
+    if (SUBS.includes(p)) { showSub(p); p = "terminal"; }
     page = p;
     document.querySelectorAll("[data-page]").forEach(el => {
       if (el.tagName === "A") { if (el.dataset.page === p) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current"); }
@@ -1141,14 +1183,19 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     if (p === "terminal" || p === "watchlist") drawChart(); else if (p === "sectors") drawRv();
   }
   function goPage(p) {
-    if (p === page) return;
+    if (p === cur) return;
     showPage(p);
     try { history.pushState(null, "", "#" + p); } catch (e) { /* sandboxed frame: the page still switches */ }
   }
   window.addEventListener("hashchange", () => {
     const p = location.hash.slice(1) || "terminal";
-    if (p !== page) { showPage(p); window.scrollTo(0, 0); }
+    if (p !== cur) { showPage(p); window.scrollTo(0, 0); }
   });
+  document.querySelectorAll(".pgsteps a").forEach(a => a.addEventListener("click", e => { e.preventDefault(); goPage(a.dataset.k); window.scrollTo(0, 0); }));
+  document.querySelectorAll(".pgbtn").forEach(b => b.addEventListener("click", () => {
+    const k = SUBS[SUBS.indexOf(page === "terminal" ? cur : "terminal") + +b.dataset.step];
+    if (k) { goPage(k); window.scrollTo(0, 0); }
+  }));
 
   // ---------- News page ----------
   let feedF = "all", feedN = 60;
@@ -1527,12 +1574,13 @@ canvas#rv { display: block; width: 100%; height: 260px; }
   let rvz; new ResizeObserver(() => { cancelAnimationFrame(rvz); rvz = requestAnimationFrame(drawRv); }).observe($("rvWrap"));
 
   // ---------- Command line + function keys ----------
-  const PANELS = { PORT: "p-port", GP: "p-gp", TOP: "p-news", EVTS: "p-evts", WEI: "p-wei", MOST: "p-most" };
+  const PANELS = { PORT: "p-port", GP: "p-gp", HOLD: "p-hold", TOP: "p-news", EVTS: "p-evts", WEI: "p-wei", MOST: "p-most" };
+  const PART = { PORT: "terminal", GP: "terminal", HOLD: "stocks", EVTS: "stocks", TOP: "markets", WEI: "markets" };
   const PAGEW = { NEWS: "news", CN: "news", SCHED: "schedule", SCHEDULE: "schedule", CAL: "schedule", SECT: "sectors", SECTORS: "sectors", ETF: "sectors", ETFS: "sectors", TERM: "terminal", HOME: "terminal" };
   function focusPanel(k) {
     const el = $(PANELS[k]); if (!el) return;
-    const want = k === "MOST" || (k === "GP" && page === "watchlist") ? "watchlist" : "terminal";
-    if (page !== want) goPage(want);
+    const want = k === "MOST" || (k === "GP" && page === "watchlist") ? "watchlist" : PART[k];
+    if (cur !== want) goPage(want);
     el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
     el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 900);
   }
@@ -1541,7 +1589,7 @@ canvas#rv { display: block; width: 100%; height: 260px; }
     const words = raw.toUpperCase().replace(/<?GO>?/g, " ").replace(/\b(US|EQUITY)\b/g, " ").trim().split(/\s+/).filter(Boolean);
     if (!words.length) { msg("Type a ticker first. Try NVDA GP or HELP."); return; }
     const fn = words.find(w => PANELS[w] || PAGEW[w] || w === "HELP");
-    if (fn === "HELP") { msg("Holdings: " + HOLD.map(h => h.t).join(" ") + " · Watchlist: " + WATCH.length + " stocks · ETFs: " + ETFS.length + " (SPY QQQ SMH IGV XBI KRE XHB…) · Functions: PORT GP EVTS TOP WEI · Pages: MOST (watchlist) NEWS SCHED SECT · Ranges: 1D 5D 1M 3M 1Y"); return; }
+    if (fn === "HELP") { msg("Holdings: " + HOLD.map(h => h.t).join(" ") + " · Watchlist: " + WATCH.length + " stocks · ETFs: " + ETFS.length + " (SPY QQQ SMH IGV XBI KRE XHB…) · Functions: PORT GP HOLD EVTS TOP WEI · Pages: MOST (watchlist) NEWS SCHED SECT · Ranges: 1D 5D 1M 3M 1Y"); return; }
     const tk = words.find(w => SEC[w]);
     // ETFs open on the Sectors page against SPY unless GP is asked for; SECT plus any ticker does the same.
     if (tk && (fn === "SECT" || fn === "SECTORS" || fn === "ETF" || (!fn && SEC[tk].kind === "etf"))) {
