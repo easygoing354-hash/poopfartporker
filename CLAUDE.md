@@ -9,6 +9,7 @@ They're not a software engineer, so keep answers short and plain.
 
 - `brand/preschool-unfiltered.md`: who the shop is, its voice, current products, prices and look.
 - Live site: https://preschoolunfiltered.netlify.app
+- Favourite colours for new designs: blue, pink and purple.
 
 ## Where things go
 
