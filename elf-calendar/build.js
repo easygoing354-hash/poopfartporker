@@ -156,6 +156,18 @@ const printableTitles = {
 const dayForPrintable = {};
 days.forEach((x) => x.p.forEach((n) => (dayForPrintable[n] = x.d)));
 
+const propList = {
+  1: '"I\'m Here!" sign, Elf Rules card', 2: 'Ballot Box label, "Vote Here!" sign', 3: '12 snowballs, "Snowball Fight Zone" sign, dry-erase scoreboard',
+  4: '"Wheee!" speech bubble, zip line flags', 7: '"Oops!" sign, 2 caution strips', 8: '"Gone Fishing" sign, 10 numbered fish',
+  9: 'Dry-erase easel, paint palette, "Elf Art Gallery" banner', 10: '"Can you find me?" sign, magnifying glass', 11: '"Let it snow!" sign, 6 snowflakes',
+  14: 'Dry-erase "Now Showing" marquee, popcorn box', 15: '"Story Time" sign, 3 mini books', 16: '"North Pole Mail" label, 4 mini envelopes',
+  17: '"My friends are hiding!" sign, dry-erase counter', 18: '"Cocoa Bar" sign, "Elf Spa" door hanger', 21: '"Happy PJ Day!" banner, "Nice List" photo frame',
+  22: '"See you next year!" sign, "Bye, friends!" bubble',
+};
+days.forEach((x) => (x.props = propList[x.d]));
+const PROP_START = 24; // page number of the Dec 1 props page (after cover, calendar, guide x2, 18 printables, props intro)
+const propPg = (d) => PROP_START + days.findIndex((x) => x.d === d);
+
 const pTag = (ps) => (ps.length > 1 ? 'Printables ' + ps.join(' &amp; ') : 'Printable ' + ps[0]);
 
 // ---------- page helpers ----------
@@ -180,15 +192,16 @@ pages.push(page(`
   <div class="cover-top">
     <div class="kicker">December 2026 · Grades K–2</div>
     <h1>Classroom Elf<br/>Calendar</h1>
-    <div class="sub">16 fun, low-prep Elf on the Shelf ideas for every school day,<br/>Tuesday, Dec 1 – Tuesday, Dec 22, plus 18 printables</div>
+    <div class="sub">16 fun, low-prep Elf on the Shelf ideas for every school day,<br/>Tuesday, Dec 1 – Tuesday, Dec 22, plus 18 printables<br/>and laminate &amp; reuse props</div>
   </div>
-  <div class="cover-elf">${elf({ w: 210 })}</div>
+  <div class="cover-elf">${elf({ w: 195 })}</div>
   <div class="cover-box">
     <h3>What's inside</h3>
     <ul>
       <li><b>Page 2:</b> Monday–Friday calendar with a different idea every day</li>
       <li><b>Pages 3–4:</b> Teacher guide: how to set up each scene, plus what you'll need</li>
       <li><b>Pages 5–22:</b> Printables 1–18, numbered to match the calendar</li>
+      <li><b>Pages 23–40:</b> Laminate &amp; reuse props for every day, plus bonus dry-erase signs</li>
     </ul>
     <h3>Quick tips</h3>
     <ul>
@@ -204,7 +217,7 @@ pages.push(page(`
 // Calendar (landscape)
 function calCell(n) {
   const x = dayByNum[n];
-  return `<div class="cell"><div class="cell-head"><span class="num">${n}</span><span class="ctitle">${x.title}</span></div><div class="ctext">${x.cal}</div><div class="cprint">${pTag(x.p)}</div></div>`;
+  return `<div class="cell"><div class="cell-head"><span class="num">${n}</span><span class="ctitle">${x.title}</span></div><div class="ctext">${x.cal}</div><div class="ctags"><span class="cprint">${pTag(x.p)}</span><span class="cprop">Props p.${propPg(n)}</span></div></div>`;
 }
 const weeks = [
   [`<div class="cell off"><span class="num dim">30</span><div class="offtxt">Nov 30<br/>Get ready! The elf arrives tomorrow.</div></div>`, calCell(1), calCell(2), calCell(3), calCell(4)],
@@ -226,7 +239,7 @@ function guideBlock(x) {
   return `<div class="gblock">
     <div class="gdate"><div class="gdow">${x.dow}</div><div class="gnum">${x.d}</div><div class="gmon">Dec</div></div>
     <div class="gbody">
-      <div class="gtitle">${x.title} <span class="gp">${pTag(x.p)}</span></div>
+      <div class="gtitle">${x.title} <span class="gp">${pTag(x.p)}</span><span class="gp prop">Props p.${propPg(x.d)}</span></div>
       <div><b class="lab">Set the scene:</b> ${x.scene}</div>
       <div><b class="lab">Morning fun:</b> ${x.fun}</div>
       <div><b class="lab">You'll need:</b> ${x.need}</div>
@@ -391,6 +404,11 @@ pages.push(printable(18, `
   </div>
 </div>`, { landscape: true, frame: false }));
 
+// Laminate & reuse props
+const propsOut = require('./props.js')({ elf, snowflake, page, days, dayByNum, propPg, C: { RED, GREEN, GOLD, INK } });
+pages.push(...propsOut.pages);
+if (pages.length !== propPg(22) + 1) throw new Error(`Prop page numbers are off: ${pages.length} pages`);
+
 // ---------- styles ----------
 const css = `
 @font-face { font-family: 'Fredoka'; src: url('fonts/Fredoka.ttf'); font-weight: 300 700; }
@@ -415,7 +433,7 @@ b { font-weight: 600; }
 .kicker { display: inline-block; background: ${GREEN}; padding: 6px 18px; border-radius: 20px; font-weight: 600; letter-spacing: 1px; font-size: 14pt; }
 .cover h1 { font-size: 64pt; line-height: .98; margin: 18px 0 14px; font-weight: 700; text-shadow: 0 4px 0 rgba(0,0,0,.18); }
 .sub { font-size: 14pt; line-height: 1.4; }
-.cover-elf { position: absolute; left: 50%; transform: translateX(-50%); top: 4.05in; }
+.cover-elf { position: absolute; left: 50%; transform: translateX(-50%); top: 4.22in; }
 .cover-box { position: absolute; left: .8in; right: .8in; top: 7.15in; background: #fff; border: 3px dashed ${GREEN}; border-radius: 18px; padding: 10px 24px 6px; font-size: 10.5pt; }
 .cover-box h3 { margin: 6px 0 2px; color: ${RED}; font-size: 13pt; }
 .cover-box ul { margin: 0 0 6px; padding-left: 18px; line-height: 1.35; }
@@ -436,6 +454,9 @@ b { font-weight: 600; }
 .ctitle { font-weight: 600; color: ${GREEN}; font-size: 11.5pt; line-height: 1.05; }
 .ctext { font-size: 10pt; line-height: 1.28; margin-top: 4px; flex: 1; }
 .cprint { align-self: flex-start; font-size: 8pt; font-weight: 600; background: #fdecc8; color: #8a5a00; padding: 1px 7px; border-radius: 8px; }
+.ctags { display: flex; gap: 4px; flex-wrap: wrap; }
+.cprop { font-size: 8pt; font-weight: 600; background: #dff0e6; color: ${GREEN}; padding: 1px 7px; border-radius: 8px; }
+.gp.prop { background: #dff0e6; color: ${GREEN}; }
 .cell.off { background: #f6f6f6; }
 .offtxt { font-size: 9pt; color: #777; margin-top: 8px; }
 .cell.break { background: #eef5fc; border-right: none; }
@@ -607,7 +628,8 @@ b { font-weight: 600; }
 .sigline.pre { font-family: 'Fredoka'; font-size: 12pt; color: ${INK}; }
 `;
 
-const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Classroom Elf Calendar · December 2026</title><style>${css}</style></head><body>${pages.join('\n')}</body></html>`;
+const allCss = css + propsOut.css;
+const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Classroom Elf Calendar · December 2026</title><style>${allCss}</style></head><body>${pages.join('\n')}</body></html>`;
 fs.writeFileSync(HTML_FILE, html);
 
 (async () => {
