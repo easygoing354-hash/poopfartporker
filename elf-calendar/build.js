@@ -1,331 +1,60 @@
-// Builds the Classroom Elf December calendar + printables PDF.
+// Builds the Classroom Elf December calendar packet (calendar, teacher guide,
+// printables, and laminate-and-reuse props), grouped day by day.
 // Usage: node elf-calendar/build.js
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { RED, GREEN, GOLD, INK, elf, snowflake, die, snowParts, snowNames, photoProps } = require('./art.js');
+const K = require('./kit.js');
+const A = require('./art2.js');
+const baseCss = require('./styles.js');
+const { lam, sign, bubble, free, dryBox, star, BLUE, ICE } = K;
 
 const OUT_DIR = __dirname;
 const HTML_FILE = path.join(OUT_DIR, 'elf-calendar.html');
 const PDF_FILE = path.join(OUT_DIR, 'Classroom-Elf-Calendar-December-2026.pdf');
 
-const RED = '#d62839', GREEN = '#1f7a4d', GOLD = '#f2b134', SKIN = '#f6d2b0', INK = '#2b2b2b';
-
-// ---------- art ----------
-function elf({ w = 120, outline = false } = {}) {
-  const f = (c) => (outline ? '#fff' : c);
-  const h = Math.round((w * 170) / 120);
-  return `<svg class="elf" width="${w}" height="${h}" viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg">
-  <g stroke="${INK}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <rect x="47" y="134" width="10" height="26" rx="4" fill="${f(RED)}"/>
-    <rect x="63" y="134" width="10" height="26" rx="4" fill="${f(RED)}"/>
-    <ellipse cx="47" cy="162" rx="9" ry="5" fill="${f(GREEN)}"/>
-    <ellipse cx="73" cy="162" rx="9" ry="5" fill="${f(GREEN)}"/>
-    <rect x="30" y="106" width="10" height="30" rx="5" transform="rotate(20 35 106)" fill="${f(RED)}"/>
-    <rect x="83" y="80" width="10" height="30" rx="5" transform="rotate(30 88 110)" fill="${f(RED)}"/>
-    <circle cx="25" cy="136" r="5.5" fill="${f(SKIN)}"/>
-    <circle cx="103" cy="82" r="5.5" fill="${f(SKIN)}"/>
-    <path d="M40 104 Q60 96 80 104 L84 140 Q60 146 36 140 Z" fill="${f(RED)}"/>
-    <path d="M38 98 L45 109 L52 100 L60 111 L68 100 L75 109 L82 98 Q60 90 38 98 Z" fill="#fff"/>
-    <ellipse cx="37" cy="78" rx="5" ry="7" fill="${f(SKIN)}"/>
-    <ellipse cx="83" cy="78" rx="5" ry="7" fill="${f(SKIN)}"/>
-    <circle cx="60" cy="77" r="22" fill="${f(SKIN)}"/>
-    <path d="M36 64 Q40 30 70 18 Q88 12 100 22 Q84 26 80 40 Q82 52 84 64 Z" fill="${f(RED)}"/>
-    <circle cx="100" cy="22" r="7" fill="#fff"/>
-    <rect x="33" y="57" width="54" height="11" rx="5.5" fill="#fff"/>
-    <path d="M53 88 Q60 95 67 88" fill="none"/>
-  </g>
-  <circle cx="52" cy="78" r="2.8" fill="${INK}"/><circle cx="68" cy="78" r="2.8" fill="${INK}"/>
-  ${outline ? '' : `<circle cx="46" cy="86" r="4" fill="#f59ca9" opacity=".7"/><circle cx="74" cy="86" r="4" fill="#f59ca9" opacity=".7"/>`}
-</svg>`;
-}
-
-function snowflake(size = 30, color = '#9cc3e6') {
-  const arms = [0, 60, 120].map((a) => `<g transform="rotate(${a} 15 15)"><line x1="15" y1="1" x2="15" y2="29"/><path d="M11 5 L15 9 L19 5 M11 25 L15 21 L19 25" fill="none"/></g>`).join('');
-  return `<svg width="${size}" height="${size}" viewBox="0 0 30 30"><g stroke="${color}" stroke-width="2" stroke-linecap="round">${arms}</g></svg>`;
-}
-
-function snowball(x, y, r = 13) {
-  return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="#5f86ad" stroke-width="2.2"/><path d="M${x - r * 0.5} ${y - r * 0.2} q${r * 0.3} -${r * 0.45} ${r * 0.75} -${r * 0.4}" stroke="#c6dbef" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-}
-
-function die(n, s = 44) {
-  const p = { 1: [[2, 2]], 2: [[1, 1], [3, 3]], 3: [[1, 1], [2, 2], [3, 3]], 4: [[1, 1], [3, 1], [1, 3], [3, 3]], 5: [[1, 1], [3, 1], [2, 2], [1, 3], [3, 3]], 6: [[1, 1], [3, 1], [1, 2], [3, 2], [1, 3], [3, 3]] }[n];
-  return `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><rect x="2" y="2" width="36" height="36" rx="7" fill="#fff" stroke="${INK}" stroke-width="2.5"/>${p.map(([c, r]) => `<circle cx="${c * 9 + 2}" cy="${r * 9 + 2}" r="3.6" fill="${INK}"/>`).join('')}</svg>`;
-}
-
-function fish(w = 60, color = '#f28c28') {
-  return `<svg width="${w}" height="${w * 0.6}" viewBox="0 0 60 36"><path d="M6 18 Q22 0 42 12 L56 4 L54 18 L56 32 L42 24 Q22 36 6 18 Z" fill="${color}" stroke="${INK}" stroke-width="2"/><circle cx="16" cy="15" r="2.5" fill="${INK}"/></svg>`;
-}
-
-// snowman parts for the roll game
-const snowParts = {
-  1: `<svg width="70" height="60" viewBox="0 0 70 60"><circle cx="35" cy="32" r="25" fill="#fff" stroke="${INK}" stroke-width="2.5"/></svg>`,
-  2: `<svg width="70" height="60" viewBox="0 0 70 60"><circle cx="35" cy="32" r="19" fill="#fff" stroke="${INK}" stroke-width="2.5"/></svg>`,
-  3: `<svg width="70" height="60" viewBox="0 0 70 60"><circle cx="35" cy="32" r="14" fill="#fff" stroke="${INK}" stroke-width="2.5"/></svg>`,
-  4: `<svg width="70" height="60" viewBox="0 0 70 60"><rect x="22" y="12" width="26" height="28" fill="${INK}"/><rect x="12" y="38" width="46" height="7" rx="3" fill="${INK}"/><rect x="22" y="31" width="26" height="5" fill="${RED}"/></svg>`,
-  5: `<svg width="70" height="60" viewBox="0 0 70 60"><circle cx="35" cy="30" r="16" fill="#fff" stroke="${INK}" stroke-width="2"/><circle cx="29" cy="25" r="2.8" fill="${INK}"/><circle cx="41" cy="25" r="2.8" fill="${INK}"/><path d="M34 30 L50 33 L34 35 Z" fill="#f28c28" stroke="${INK}" stroke-width="1.2"/></svg>`,
-  6: `<svg width="70" height="60" viewBox="0 0 70 60"><g stroke="#7a4a21" stroke-width="3.5" stroke-linecap="round" fill="none"><path d="M4 40 L24 28 M12 35 L8 26"/><path d="M66 40 L46 28 M58 35 L62 26"/></g><path d="M26 18 h18 v8 h-18z M38 26 h6 v18 h-6z" fill="${RED}" stroke="${INK}" stroke-width="1.5"/></svg>`,
-};
-const snowNames = { 1: 'Big bottom snowball', 2: 'Middle snowball', 3: 'Small head', 4: 'Top hat', 5: 'Eyes &amp; carrot nose', 6: 'Stick arms &amp; scarf' };
-
-// photo booth props
-const props = [
-  ['Elf Hat', `<svg width="230" height="170" viewBox="0 0 120 90"><path d="M14 74 Q24 26 66 12 Q92 4 108 18 Q86 22 80 40 Q82 58 92 74 Z" fill="${RED}" stroke="${INK}" stroke-width="2.5"/><circle cx="108" cy="18" r="9" fill="#fff" stroke="${INK}" stroke-width="2.5"/><rect x="8" y="68" width="92" height="16" rx="8" fill="#fff" stroke="${INK}" stroke-width="2.5"/></svg>`],
-  ['Reindeer Antlers', `<svg width="260" height="160" viewBox="0 0 130 80"><g stroke="#7a4a21" stroke-width="7" stroke-linecap="round" fill="none"><path d="M40 72 Q34 40 18 14 M32 46 L10 40 M28 30 L36 10"/><path d="M90 72 Q96 40 112 14 M98 46 L120 40 M102 30 L94 10"/></g><path d="M22 74 Q65 56 108 74" stroke="${GREEN}" stroke-width="9" fill="none" stroke-linecap="round"/></svg>`],
-  ['Silly Glasses', `<svg width="260" height="110" viewBox="0 0 130 55"><g stroke="${GREEN}" stroke-width="6" fill="#e9f6ff"><circle cx="35" cy="28" r="20"/><circle cx="95" cy="28" r="20"/></g><path d="M55 26 Q65 18 75 26" stroke="${GREEN}" stroke-width="6" fill="none"/><path d="M15 24 L3 18 M115 24 L127 18" stroke="${GREEN}" stroke-width="6" stroke-linecap="round"/><circle cx="35" cy="28" r="4" fill="${INK}"/><circle cx="95" cy="28" r="4" fill="${INK}"/></svg>`],
-  ['Fancy Mustache', `<svg width="250" height="110" viewBox="0 0 100 44"><path d="M50 18 Q36 2 20 14 Q10 22 2 16 Q6 34 24 34 Q40 34 50 24 Q60 34 76 34 Q94 34 98 16 Q90 22 80 14 Q64 2 50 18 Z" fill="#6b3e1f" stroke="${INK}" stroke-width="2"/></svg>`],
-  ['Rudolph Nose', `<svg width="150" height="150" viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="${RED}" stroke="${INK}" stroke-width="2.5"/><ellipse cx="22" cy="21" rx="7" ry="4" fill="#fff" opacity=".7"/></svg>`],
-  ['Nice List Sign', `<svg width="250" height="170" viewBox="0 0 125 85"><path d="M10 6 H115 Q121 6 121 12 V56 Q121 62 115 62 H50 L30 80 L34 62 H10 Q4 62 4 56 V12 Q4 6 10 6 Z" fill="#fff" stroke="${RED}" stroke-width="4"/><text x="62.5" y="30" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="15" fill="${GREEN}">I'm on the</text><text x="62.5" y="50" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="17" fill="${RED}">NICE LIST!</text></svg>`],
-];
-
-// ---------- content ----------
-const days = [
-  { d: 1, dow: 'Tue', title: 'The Elf Arrives!', cal: 'The elf flies in with a welcome letter. Read it together and learn the "no touching" rule.',
-    scene: 'Sit the elf on a stack of books near the board, holding the Welcome Letter. Sprinkle cotton balls or paper "snow" around it.',
-    fun: 'Read the letter aloud. Teach the big rule: you can look and talk, but don\'t touch. It keeps the elf\'s magic!',
-    need: 'The elf, cotton balls or white paper scraps', p: [1] },
-  { d: 2, dow: 'Wed', title: 'Name Our Elf', cal: 'The elf sits on a ballot box. Everyone votes on its name!',
-    scene: 'Cut a slot in a tissue box, label it "Ballot Box," and sit the elf on top with the blank ballots beside it.',
-    fun: 'Each child writes or draws a name idea. Pick the top 3 and vote with a show of hands. Fill in the "Meet Our Elf" sign.',
-    need: 'Tissue box, pencils', p: [2, 3] },
-  { d: 3, dow: 'Thu', title: 'Snowball Fight!', cal: 'A marshmallow snowball fight behind a paper-cup fort. Count the snowballs!',
-    scene: 'Build a small fort of paper cups. Put the elf behind it, a stuffed animal "opponent" across the desk, and scatter mini marshmallows.',
-    fun: 'Who won? Count the "snowballs" together, then do the counting page.',
-    need: 'Paper cups, mini marshmallows or cotton balls, a stuffed animal', p: [4] },
-  { d: 4, dow: 'Fri', title: 'Zip Line Adventure', cal: 'The elf zips across the room on a string. Draw where it will fly next.',
-    scene: 'Tie yarn from a high spot to a lower one (e.g., a cabinet to a chair). Hang the elf from it with a binder clip or a paper-cup "gondola."',
-    fun: 'Talk about where the elf might zip next, then draw it.',
-    need: 'Yarn or string, a binder clip or paper cup', p: [5] },
-  { d: 7, dow: 'Mon', title: 'Wrapping Paper Mischief', cal: 'The elf wrapped the teacher\'s things in wrapping paper! File a Mischief Report.',
-    scene: 'Wrap a few desk items (stapler, tape, a mug, your chair) in holiday wrapping paper. Leave the elf on top with tape stuck to its hand.',
-    fun: 'Let students help unwrap. Then they fill out a Mischief Report about what they think happened.',
-    need: 'Wrapping paper or newspaper, tape', p: [6] },
-  { d: 8, dow: 'Tue', title: 'Gone Fishing', cal: 'The elf goes fishing in a bowl of fish crackers. Everyone earns a fishing license!',
-    scene: 'Make a fishing pole from a pencil, string, and a paperclip hook. Sit the elf on the edge of a bowl of fish-shaped crackers.',
-    fun: 'Share the "catch" at snack time (check for allergies first). Hand out fishing licenses to fill in.',
-    need: 'Pencil, string, paperclip, bowl, fish crackers', p: [7] },
-  { d: 9, dow: 'Wed', title: 'Elf Art Studio', cal: 'The elf is caught coloring, with crayons everywhere. Color your own elf!',
-    scene: 'Leave the elf lying on a half-colored page, surrounded by crayons, with one silly scribble on the whiteboard.',
-    fun: 'Free coloring time. Hang finished pages as an "Elf Art Gallery."',
-    need: 'Crayons', p: [8] },
-  { d: 10, dow: 'Thu', title: 'Hide &amp; Seek Hunt', cal: 'The elf hides and leaves clues. Follow the scavenger hunt to find it!',
-    scene: 'Hide the elf in a final spot. Tape Clue 1 to the board and the other clues at each spot (door, library, sink, cubbies, pencil sharpener).',
-    fun: 'Read each clue together and walk to the next spot until you find the elf. Swap spots to fit your room.',
-    need: 'Tape', p: [9] },
-  { d: 11, dow: 'Fri', title: 'Snow Angel', cal: 'A snow angel in powdered sugar! Play Roll &amp; Build a Snowman.',
-    scene: 'Spread a thin layer of flour or powdered sugar on a dark tray or black paper. Press the elf in to make a "snow angel" and leave it lying there.',
-    fun: 'Play Roll &amp; Build a Snowman with a partner or in small groups.',
-    need: 'Dark tray or black paper, flour or powdered sugar, dice', p: [10] },
-  { d: 14, dow: 'Mon', title: 'Elf Movie Morning', cal: 'The elf has popcorn and movie tickets ready. Enjoy a short holiday cartoon.',
-    scene: 'Set the elf in front of the board with a small bag of popcorn and a stack of movie tickets.',
-    fun: 'Hand out tickets, then watch a short holiday cartoon or read-aloud video (5–15 min) when it fits your day.',
-    need: 'Popcorn (optional), a short video', p: [11] },
-  { d: 15, dow: 'Tue', title: 'Story Time with Stuffies', cal: 'The elf reads to the stuffed animals. Everyone gets an elf bookmark.',
-    scene: 'Set the elf in the reading corner holding an open book, with stuffed animals sitting in a circle "listening."',
-    fun: 'Give everyone a bookmark to color. Do buddy reading or read a holiday story aloud.',
-    need: 'A picture book, a few stuffed animals', p: [12] },
-  { d: 16, dow: 'Wed', title: 'North Pole Mail', cal: 'The elf brings a North Pole mailbox. Write letters to Santa.',
-    scene: 'Label a shoebox "North Pole Mail" and sit the elf on top.',
-    fun: 'Kids write or draw a letter to Santa and "mail" it. The elf takes the letters to the North Pole tonight!',
-    need: 'Shoebox, marker', p: [13] },
-  { d: 17, dow: 'Thu', title: 'Elf Friends Visit', cal: 'Paper elf friends are hiding all over the room. Find all 15!',
-    scene: 'Cut out the mini paper elves and hide them around the room: on shelves, under chairs, in plants. The real elf holds the sign.',
-    fun: 'Find all 15 friends, counting them together as they turn up.',
-    need: 'Scissors, tape', p: [14] },
-  { d: 18, dow: 'Fri', title: 'Cocoa Bath', cal: 'The elf soaks in a mug of cotton-ball "marshmallows" and sends home PJ Day invites.',
-    scene: 'Put the elf in a big mug filled with cotton balls ("marshmallows"), with the PJ Day invitations stacked beside it.',
-    fun: 'Read the invitation together and send it home for Monday\'s PJ Day. (Check your school\'s dress policy.)',
-    need: 'Large mug, cotton balls', p: [15] },
-  { d: 21, dow: 'Mon', title: 'PJ Day Photo Booth', cal: 'PJ Day! The elf is in pajamas, with a photo booth. Say "cheese!"',
-    scene: 'Dress the elf in pajamas (a sock "sleeping bag" or a tissue "blanket" works) next to the photo booth props.',
-    fun: 'Kids pose with the props for class photos (follow your school\'s photo policy).',
-    need: 'Craft sticks, tape, a phone or camera', p: [16] },
-  { d: 22, dow: 'Tue', title: 'Goodbye, Elf!', cal: 'The elf says goodbye with a letter and Nice List certificates.',
-    scene: 'Sit the elf in its very first spot with the Goodbye Letter and a stack of certificates (plus candy canes, if you like).',
-    fun: 'Read the letter, hand out certificates, and wave goodbye as the elf "flies home" tonight.',
-    need: 'Candy canes (optional)', p: [17, 18] },
-];
-const dayByNum = Object.fromEntries(days.map((x) => [x.d, x]));
-
-const printableTitles = {
-  1: 'Welcome Letter', 2: 'Name Ballots', 3: 'Meet Our Elf Sign', 4: 'Count the Snowballs', 5: 'Where Will I Zip Next?',
-  6: 'Elf Mischief Report', 7: 'Elf Fishing License', 8: 'Elf Coloring Page', 9: 'Scavenger Hunt Clues',
-  10: 'Roll &amp; Build a Snowman', 11: 'Elf Cinema Tickets', 12: 'Elf Bookmarks', 13: 'Letter to Santa',
-  14: 'Mini Elf Friends', 15: 'PJ Day Invitations', 16: 'Photo Booth Props', 17: 'Goodbye Letter', 18: 'Nice List Certificate',
-};
-const dayForPrintable = {};
-days.forEach((x) => x.p.forEach((n) => (dayForPrintable[n] = x.d)));
-
-const propList = {
-  1: '"I\'m Here!" sign, Elf Rules card', 2: 'Ballot Box label, "Vote Here!" sign', 3: '12 snowballs, "Snowball Fight Zone" sign, dry-erase scoreboard',
-  4: '"Wheee!" speech bubble, zip line flags', 7: '"Oops!" sign, 2 caution strips', 8: '"Gone Fishing" sign, 10 numbered fish',
-  9: 'Dry-erase easel, paint palette, "Elf Art Gallery" banner', 10: '"Can you find me?" sign, magnifying glass', 11: '"Let it snow!" sign, 6 snowflakes',
-  14: 'Dry-erase "Now Showing" marquee, popcorn box', 15: '"Story Time" sign, 3 mini books', 16: '"North Pole Mail" label, 4 mini envelopes',
-  17: '"My friends are hiding!" sign, dry-erase counter', 18: '"Cocoa Bar" sign, "Elf Spa" door hanger', 21: '"Happy PJ Day!" banner, "Nice List" photo frame',
-  22: '"See you next year!" sign, "Bye, friends!" bubble',
-};
-days.forEach((x) => (x.props = propList[x.d]));
-const PROP_START = 24; // page number of the Dec 1 props page (after cover, calendar, guide x2, 18 printables, props intro)
-const propPg = (d) => PROP_START + days.findIndex((x) => x.d === d);
-
-const pTag = (ps) => (ps.length > 1 ? 'Printables ' + ps.join(' &amp; ') : 'Printable ' + ps[0]);
-
-// ---------- page helpers ----------
-let pageNo = 0;
-function page(inner, { cls = '', landscape = false } = {}) {
-  pageNo++;
-  return `<section class="page ${landscape ? 'land' : ''} ${cls}">${inner}</section>`;
-}
-function printable(n, inner, { landscape = false, frame = true } = {}) {
-  const d = dayForPrintable[n];
-  return page(`${frame ? '<div class="frame">' : ''}<div class="ptag">Dec ${d} · Printable ${n}</div>${inner}${frame ? '</div>' : ''}`, { cls: 'printable', landscape });
-}
 const hw = (n = 1, extra = '') => Array.from({ length: n }, () => `<div class="hw" ${extra}></div>`).join('');
 
-// ---------- pages ----------
-const pages = [];
+// ---------------------------------------------------------------------------
+// Day-by-day content. Each entry has calendar text (elf + idea), a teacher
+// guide (scene / fun / need), student printables, and laminate props pages.
+// ---------------------------------------------------------------------------
 
-// Cover
-pages.push(page(`
-<div class="cover">
-  <div class="flakes">${Array.from({ length: 14 }, (_, i) => `<span style="left:${(i * 53) % 95}%;top:${(i * 37) % 88}%">${snowflake(18 + (i % 3) * 10, '#ffffff')}</span>`).join('')}</div>
-  <div class="cover-top">
-    <div class="kicker">December 2026 · Grades K–2</div>
-    <h1>Classroom Elf<br/>Calendar</h1>
-    <div class="sub">16 fun, low-prep Elf on the Shelf ideas for every school day,<br/>Tuesday, Dec 1 – Tuesday, Dec 22, plus 18 printables<br/>and laminate &amp; reuse props</div>
-  </div>
-  <div class="cover-elf">${elf({ w: 195 })}</div>
-  <div class="cover-box">
-    <h3>What's inside</h3>
-    <ul>
-      <li><b>Page 2:</b> Monday–Friday calendar with a different idea every day</li>
-      <li><b>Pages 3–4:</b> Teacher guide: how to set up each scene, plus what you'll need</li>
-      <li><b>Pages 5–22:</b> Printables 1–18, numbered to match the calendar</li>
-      <li><b>Pages 23–40:</b> Laminate &amp; reuse props for every day, plus bonus dry-erase signs</li>
-    </ul>
-    <h3>Quick tips</h3>
-    <ul>
-      <li>Set up each scene after school the day before, so it's ready first thing.</li>
-      <li>Check for food allergies before any snack idea (Dec 3, Dec 8, Dec 14).</li>
-      <li>Did someone touch the elf? Sprinkle a little cinnamon "magic" nearby and the elf is good as new!</li>
-      <li>Not every family celebrates. Keep it light and playful, and welcome everyone to join the fun.</li>
-    </ul>
-  </div>
-  <div class="disclaimer">Not affiliated with or endorsed by The Elf on the Shelf®. For classroom use.</div>
-</div>`, { cls: 'cover-page' }));
-
-// Calendar (landscape)
-function calCell(n) {
-  const x = dayByNum[n];
-  return `<div class="cell"><div class="cell-head"><span class="num">${n}</span><span class="ctitle">${x.title}</span></div><div class="ctext">${x.cal}</div><div class="ctags"><span class="cprint">${pTag(x.p)}</span><span class="cprop">Props p.${propPg(n)}</span></div></div>`;
-}
-const weeks = [
-  [`<div class="cell off"><span class="num dim">30</span><div class="offtxt">Nov 30<br/>Get ready! The elf arrives tomorrow.</div></div>`, calCell(1), calCell(2), calCell(3), calCell(4)],
-  [7, 8, 9, 10, 11].map(calCell),
-  [14, 15, 16, 17, 18].map(calCell),
-  [calCell(21), calCell(22), `<div class="cell break" style="grid-column: span 3"><div class="breaktxt">${snowflake(30, '#9cc3e6')}<div><b>Dec 23–25: Winter Break!</b><br/>The elf is back at the North Pole helping Santa.</div>${snowflake(30, '#9cc3e6')}</div></div>`],
-];
-pages.push(page(`
-<div class="cal">
-  <div class="cal-header"><div><div class="cal-title">December 2026</div><div class="cal-sub">Classroom Elf Calendar · Monday–Friday</div></div>${elf({ w: 52 })}</div>
-  <div class="grid">
-    ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((d) => `<div class="dow">${d}</div>`).join('')}
-    ${weeks.flat().join('')}
-  </div>
-</div>`, { landscape: true }));
-
-// Teacher guide (2 pages)
-function guideBlock(x) {
-  return `<div class="gblock">
-    <div class="gdate"><div class="gdow">${x.dow}</div><div class="gnum">${x.d}</div><div class="gmon">Dec</div></div>
-    <div class="gbody">
-      <div class="gtitle">${x.title} <span class="gp">${pTag(x.p)}</span><span class="gp prop">Props p.${propPg(x.d)}</span></div>
-      <div><b class="lab">Set the scene:</b> ${x.scene}</div>
-      <div><b class="lab">Morning fun:</b> ${x.fun}</div>
-      <div><b class="lab">You'll need:</b> ${x.need}</div>
-    </div></div>`;
-}
-pages.push(page(`<div class="guide"><h2>Teacher Guide <span>Week 1 &amp; Week 2</span></h2>${days.slice(0, 8).map(guideBlock).join('')}</div>`));
-pages.push(page(`<div class="guide"><h2>Teacher Guide <span>Week 3 &amp; Week 4</span></h2>${days.slice(8).map(guideBlock).join('')}</div>`));
-
-// P1 Welcome letter
-pages.push(printable(1, `
+const welcomeLetter = `
 <div class="letter">
-  <div class="letter-head">${elf({ w: 90 })}<h2 class="ptitle">Hello from the North Pole!</h2></div>
-  <div class="hand">
+  <div class="letter-head">${elf({ w: 84 })}<h2 class="ptitle">Hello from the North Pole!</h2></div>
+  <div class="hand l2">
     <p>Dear Friends,</p>
-    <p>Santa sent me to your classroom to spend December with you! Every night I fly back to the North Pole to tell Santa about all the kind and helpful things I see.</p>
-    <p>I have one very important rule: <b>please do not touch me!</b> If you touch me, I might lose my Christmas magic. But you can talk to me anytime. I'm a great listener!</p>
-    <p>Every school morning, look for me. I'll be hiding somewhere new, and I might bring a surprise!</p>
-    <p>Oh, and one more thing... I don't have a name yet! Can you help me think of one?</p>
+    <p>Surprise! I just came through my magic elf door. Santa sent me to spend December in your classroom! Every night I fly to the North Pole to tell Santa about all the kind and helpful things I see.</p>
+    <p><b>My Elf Rules:</b></p>
+    <ol>
+      <li>You may <b>look</b> at me.</li>
+      <li>You may <b>talk</b> to me. I love jokes and secrets!</li>
+      <li>Please <b>don't touch</b> me, or my magic might fizzle out!</li>
+    </ol>
+    <p>Oh, and I don't have a name yet! Can you think of a good one? Tomorrow everyone gets to vote.</p>
+    <p class="ps"><b>P.S.</b> Bet you can't find me tomorrow. I'm the best hider at the North Pole! Last year I hid in a cup of cocoa for three whole days. (Santa is <i>still</i> looking for his socks... that was me too.)</p>
     <p class="sign">Your new friend,<br/><span class="big">Your Classroom Elf</span></p>
   </div>
-</div>`));
+</div>`;
 
-// P2 Name ballots
-const ballot = `<div class="ballot cut">${elf({ w: 46 })}<div><div class="btitle">Name the Elf Ballot</div><div class="bq">I think our elf should be named:</div>${hw(1)}<div class="bname">Voter: ____________________</div></div></div>`;
-pages.push(printable(2, `<h2 class="ptitle">Name Our Elf!</h2><div class="psub">Cut apart. Write or draw your best elf name, then drop it in the ballot box.</div><div class="ballots">${ballot.repeat(8)}</div>`));
-
-// P3 Meet our elf sign
-pages.push(printable(3, `
-<div class="meet">
-  <h2 class="ptitle huge">Meet Our Elf!</h2>
-  <div class="meet-elf">${elf({ w: 230 })}</div>
-  <div class="meet-lines">
-    <div class="mrow"><span>My name is</span><div class="mline"></div></div>
-    <div class="mrow"><span>I arrived on</span><div class="mline pre">December 1, 2026</div></div>
-    <div class="mrow"><span>I live at</span><div class="mline pre">The North Pole</div></div>
-    <div class="mrow"><span>Please</span><div class="mline pre red">look, but don't touch!</div></div>
+const goodbyeLetter = `
+<div class="letter">
+  <div class="letter-head">${elf({ w: 84 })}<h2 class="ptitle">Goodbye for Now!</h2></div>
+  <div class="hand l2">
+    <p>Dear Friends,</p>
+    <p>Today is my last day in your classroom. Tonight I fly home through my magic door to help Santa get ready for the big night!</p>
+    <p>We had SO much fun: my morning message (sorry about the spelling!), our secret passwords, my bubble bath, getting tangled in lights, and being your teacher for a day!</p>
+    <p>I told Santa how kind, helpful, and silly you all are. You made my heart as warm as a cup of hot cocoa.</p>
+    <p>Have a wonderful winter break. Be kind, read lots of books, and get plenty of rest.</p>
+    <p>I'll miss you! See you next year!</p>
+    <p class="sign">Love,<br/><span class="big">____________________</span></p>
   </div>
-</div>`));
+</div>`;
 
-// P4 Count the snowballs
-function seeded(seed) { let s = seed; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); }
-function snowBox(count, seed) {
-  const rnd = seeded(seed);
-  const slots = []; for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) slots.push([c, r]);
-  for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [slots[i], slots[j]] = [slots[j], slots[i]]; }
-  const balls = slots.slice(0, count).map(([c, r]) => snowball(28 + c * 48 + rnd() * 10 - 5, 26 + r * 40 + rnd() * 8 - 4)).join('');
-  return `<div class="sbox"><svg width="100%" viewBox="0 0 200 130">${balls}</svg><div class="sans">There are <span class="nbox"></span> snowballs.</div></div>`;
-}
-pages.push(printable(4, `<h2 class="ptitle">Count the Snowballs!</h2><div class="psub">The elf had a snowball fight! Count the snowballs in each box and write the number.</div>
-<div class="sgrid">${[[4, 3], [7, 11], [2, 5], [9, 17], [6, 23], [10, 29]].map(([c, s]) => snowBox(c, s)).join('')}</div>
-<div class="bonus">${elf({ w: 44 })}<div><b>Bonus:</b> Which box has the <u>most</u> snowballs? Color it in!</div></div>`));
+const ballot = `<div class="ballot cut">${elf({ w: 46 })}<div><div class="btitle">Name the Elf Ballot</div><div class="bq">I think our elf should be named:</div>${hw(1)}<div class="bname">Voter: ____________________</div></div></div>`;
 
-// P5 Zip next
-pages.push(printable(5, `<h2 class="ptitle">Where Will I Zip Next?</h2><div class="psub">Draw where you think the elf will zip to next!</div>
-<div class="drawbox zip"><svg class="zipline" viewBox="0 0 600 120" preserveAspectRatio="none"><path d="M0 10 Q300 60 600 110" stroke="#888" stroke-width="3" stroke-dasharray="10 8" fill="none"/></svg><div class="zipelf">${elf({ w: 70 })}</div></div>
-<div class="wrow">I think the elf will zip to</div>${hw(2)}<div class="byline">Name: ______________________</div>`));
-
-// P6 Mischief report
-pages.push(printable(6, `<div class="report-head"><h2 class="ptitle">Elf Mischief Report</h2><div class="stamp">CASE FILE</div></div>
-<div class="fields"><div>Reporter: ________________________</div><div>Date: December ____, 2026</div></div>
-<div class="q">1. Draw what the elf did:</div><div class="drawbox short"></div>
-<div class="q">2. Was the elf... <span class="circleopts">(circle one)</span></div>
-<div class="opts"><span>Naughty</span><span>Silly</span><span>BOTH!</span></div>
-<div class="q">3. Why do you think the elf did it?</div>${hw(2)}
-<div class="footelf">${elf({ w: 50 })}<span>Case closed! Thank you, Detective.</span></div>`));
-
-// P7 Fishing license
-const license = `<div class="license cut"><div class="lic-top"><span>OFFICIAL</span> North Pole Fishing License</div>
-<div class="lic-body"><div class="photo">Draw<br/>yourself<br/>here!</div><div class="lic-fields">
-<div>Name: _____________________</div><div>Favorite fish: ________________</div><div>Fish I can catch: <span class="fishrow">${fish(34)}${fish(34, '#4fa3d9')}${fish(34, '#f2b134')}</span></div>
-<div>Issued: December 8, 2026</div></div></div>
-<div class="lic-foot">Approved by: <span class="hand">the Classroom Elf</span> ${elf({ w: 26 })}</div></div>`;
-pages.push(printable(7, `<h2 class="ptitle">Gone Fishing!</h2><div class="psub">Cut out your license. Fill it in and draw your picture.</div>${license}${license}`));
-
-// P8 Coloring page
-pages.push(printable(8, `<h2 class="ptitle outline-title">Our Classroom Elf</h2>
-<div class="color-scene"><svg class="presents" viewBox="0 0 600 220" width="100%">
-<g stroke="${INK}" stroke-width="3" fill="#fff" stroke-linejoin="round">
-<rect x="20" y="90" width="130" height="120"/><rect x="75" y="90" width="20" height="120"/><path d="M85 90 Q55 50 45 75 Q60 90 85 90 Q115 50 125 75 Q110 90 85 90"/>
-<rect x="450" y="120" width="130" height="90"/><rect x="450" y="155" width="130" height="18"/><path d="M515 120 Q490 85 480 105 Q495 120 515 120 Q540 85 550 105 Q535 120 515 120"/>
-<rect x="165" y="150" width="70" height="60"/><rect x="195" y="150" width="12" height="60"/>
-</g></svg><div class="color-elf">${elf({ w: 380, outline: true })}</div>
-<div class="cflakes">${[0, 1, 2, 3, 4, 5].map((i) => `<span style="left:${[4, 80, 12, 88, 40, 62][i]}%;top:${[2, 6, 40, 38, 0, 3][i]}%">${snowflake(46, INK)}</span>`).join('')}</div></div>
-<div class="byline center">Colored by: ______________________</div>`));
-
-// P9 Scavenger hunt
 const clues = [
   ['Clue 1', 'Hello, friends! Let\'s play a game.<br/>Go where we line up... I\'ll do the same!', 'Tape to the board'],
   ['Clue 2', 'Books and stories, big and small.<br/>Look where we read. I\'m near them all!', 'Place at the door'],
@@ -334,302 +63,482 @@ const clues = [
   ['Clue 5', 'Pencils sharp and ready to go.<br/>Look by the sharpener down below!', 'Place by the cubbies'],
   ['You found me!', 'Hooray, hooray, you found my chair!<br/>Thanks for playing, I was hiding there!', 'Place with the elf'],
 ];
-pages.push(printable(9, `<h2 class="ptitle">Elf Hide &amp; Seek Hunt</h2><div class="psub">Cut apart. The small gray note on each card says where to put it. Change spots to fit your room!</div>
-<div class="clues">${clues.map(([t, c, w], i) => `<div class="clue cut"><div class="cnum">${i === 5 ? elf({ w: 36 }) : i + 1}</div><div class="cl-t">${t}</div><div class="cl-c hand">${c}</div><div class="cl-w">Teacher: ${w}</div></div>`).join('')}</div>`));
 
-// P10 Roll a snowman
-pages.push(printable(10, `<h2 class="ptitle">Roll &amp; Build a Snowman</h2><div class="psub">Take turns rolling a die. Draw the part that matches your roll. Start with a 1! First to finish the whole snowman wins.</div>
-<div class="rolltable">${[1, 2, 3, 4, 5, 6].map((n) => `<div class="rrow">${die(n)}<div class="rpart">${snowParts[n]}</div><div class="rname">${snowNames[n]}</div></div>`).join('')}</div>
-<div class="buildbox"><div class="ground"></div><span>Build your snowman here!</span></div><div class="byline">Name: ______________________</div>`));
+const mmText = 'gud morning clas! today we wil have recess for 4 hours and lunch is candy canes. pleez do not tell your teecher.<br/>love, your elf';
+const mmFix = [['gud', 'Good'], ['clas', 'class'], ['today', 'Today'], ['wil', 'will'], ['pleez', 'Please'], ['teecher', 'teacher'], ['love', 'Love']];
 
-// P11 Movie tickets
+const passwords = ['Jingle Banana', 'Snowman Burp', 'Reindeer Pancake', 'Candy Cane Kazoo', 'Twinkle Pickle', 'Frosty Noodle', 'Sleigh Bell Burrito', 'Jolly Meatball', 'Wiggly Mittens', 'Sparkly Sock'];
+
+const teacherGrades = [
+  ['Singing', 'Needs Improvement<br/><small>(a little too loud!)</small>'],
+  ['Dancing', 'A+'],
+  ['Hiding snacks in the desk', 'Excellent'],
+  ['Remembering where the coffee is', 'Needs Practice'],
+  ['Laughing at elf jokes', 'A+++'],
+];
+
 const ticket = `<div class="ticket cut"><div class="t-stub"><span>ADMIT<br/>ONE</span></div><div class="t-main"><div class="t-brand">ELF CINEMA</div><div class="t-show">Now showing: a holiday surprise!</div><div class="t-row"><span>Seat: ____</span><span>Popcorn: Yes / No</span></div></div>${elf({ w: 34 })}</div>`;
-pages.push(printable(11, `<h2 class="ptitle">Elf Cinema Tickets</h2><div class="psub">Cut apart and hand one to every movie-goer!</div><div class="tickets">${ticket.repeat(10)}</div>`));
-
-// P12 Bookmarks
-const bms = ['Snow much fun to read!', 'Shhh... the elf is reading!', 'I read with our elf!', 'Elf-ishly good reader!'];
-pages.push(printable(12, `<h2 class="ptitle">Elf Bookmarks</h2><div class="psub">Color, cut out, and use with your favorite book!</div>
-<div class="bookmarks">${bms.map((t) => `<div class="bm cut"><div class="bm-t">${t}</div>${elf({ w: 140, outline: true })}<div class="bm-flakes">${snowflake(28, INK)}${snowflake(20, INK)}</div><div class="bm-name">Name:<br/>____________</div></div>`).join('')}</div>`));
-
-// P13 Letter to Santa
-pages.push(printable(13, `<div class="letter-head">${elf({ w: 70 })}<h2 class="ptitle">North Pole Mail</h2></div>
-<div class="santa">
-<div class="srow hand">Dear Santa,</div>
-<div class="srow">This year I was kind when I</div>${hw(1)}
-<div class="srow">My favorite thing about December is</div>${hw(1)}
-<div class="srow">I would love</div>${hw(1)}
-<div class="q">Here is a picture for you:</div><div class="drawbox short2"></div>
-<div class="srow">Love,</div>${hw(1, 'style="width:60%"')}
-</div>`));
-
-// P14 Mini elves
-const miniCells = Array.from({ length: 15 }, () => `<div class="mini cut">${elf({ w: 84 })}</div>`).join('') +
-  `<div class="mini cut sign"><div>My friends are hiding!<br/><b>Can you find all 15?</b></div></div>`;
-pages.push(printable(14, `<h2 class="ptitle">Mini Elf Friends</h2><div class="psub">Cut out the 15 elf friends and hide them around the room. Give the sign to your real elf to hold!</div><div class="minis">${miniCells}</div>`));
-
-// P15 PJ invites
 const invite = `<div class="invite cut"><div class="inv-t">You're Invited!</div><div class="inv-big">PJ Day</div><div class="inv-date">Monday, December 21, 2026</div><div class="inv-txt">Wear your coziest pajamas to school! Bring your best smile for our elf photo booth.</div><div class="inv-from">Love, <span class="hand">your Classroom Elf</span></div>${elf({ w: 52 })}</div>`;
-pages.push(printable(15, `<h2 class="ptitle">PJ Day Invitations</h2><div class="psub">Cut apart and send one home with each student.</div><div class="invites">${invite.repeat(4)}</div>`));
+const bms = ['Snow much fun to read!', 'Shhh... the elf is reading!', 'I read with our elf!', 'Elf-ishly good reader!'];
+const stickyNotes = [
+  ['#fff59d', 'Knock knock!<br/>Who\'s there?<br/><b>Snow.</b><br/>Snow who?<br/><b>Snow time to waste, let\'s learn!</b>'],
+  ['#ffcdd2', 'The elf was here!'], ['#c8e6c9', 'You are<br/><b>snow</b> awesome!'], ['#bbdefb', 'What do elves learn in school?<br/><b>The elf-abet!</b>'],
+  ['#fff59d', 'Boo! Wait... wrong holiday.'], ['#ffe0b2', 'Hi! Have a jolly day!'], ['#c8e6c9', 'What do snowmen eat for breakfast?<br/><b>Frosted Flakes!</b>'],
+  ['#ffcdd2', 'I left 1 more note somewhere...'], ['#bbdefb', 'Be kind today!<br/>Santa is watching.'], ['#fff59d', 'This desk smells like cookies.'],
+  ['#ffe0b2', 'Why was the elf sad?<br/><b>Low elf-esteem!</b>'], ['#c8e6c9', 'Smile! You\'re on the Nice List!'],
+];
+const danceMoves = [['Reindeer Hop', 'Hands up like antlers and hop!'], ['Snowflake Spin', 'Spin slowly around one time.'], ['Elf Wiggle', 'Wiggle from your head to your toes!'], ['Penguin Waddle', 'Arms down, waddle in place.'], ['Santa Belly Laugh', 'Hold your belly: "Ho! Ho! Ho!"'], ['Frozen Snowman', 'FREEZE! Don\'t move a muscle!']];
 
-// P16 Photo props
-pages.push(printable(16, `<h2 class="ptitle">Elf Photo Booth Props</h2><div class="psub">Cut out each prop and tape it to a craft stick. Strike a pose!</div>
-<div class="props">${props.map(([n, s]) => `<div class="prop cut"><div class="prop-art">${s}</div><div class="prop-n">${n}</div></div>`).join('')}</div>`));
+const days = [
+  { n: 1, dow: 'Tue', d: 1, title: 'Welcome, Elf!',
+    elfDoes: 'Arrives through a magic elf door with a welcome letter.', idea: 'Read the letter, learn the rules, laugh at the joke.',
+    scene: 'Tape an elf door to the wall at kid height. Sit the elf beside it with the Welcome Letter and the "I\'m Here!" sign.',
+    fun: 'Read the letter aloud. Go over the 3 Elf Rules and giggle at the elf\'s joke. Ask kids to think of names for tomorrow.',
+    need: 'One laminated elf door and its accessories, tape',
+    printables: [{ title: 'Welcome Letter', html: welcomeLetter }],
+    props: [
+      { note: 'Pick a door! Tape it low on a wall, cabinet, or the back of your classroom door. Use a new door each year, or a different door for each class.', html: 'DOORS0' },
+      { note: 'More doors to choose from. Cut them out before laminating for clean edges.', html: 'DOORS1' },
+      { note: 'Our last two doors. The arched tops make them easy to cut with scissors.', html: 'DOORS2' },
+      { note: 'Set these around the door: the mat under it, the wreath on it, the lantern beside it, and the sign nearby.', html: 'DOORACC' },
+      { note: 'The elf holds the sign on arrival day. Keep the rules card up all month!', html: 'ARRIVE' },
+    ],
+    propList: '6 elf doors, welcome mat, "Elf Crossing" sign, mini wreath, lantern, "Knock" plaque, "I\'m Here!" sign, Elf Rules card' },
+  { n: 2, dow: 'Wed', d: 2, title: 'Name Our Elf',
+    elfDoes: 'Sits on top of a ballot box.', idea: 'Everyone votes on the elf\'s name!',
+    scene: 'Cut a slot in a tissue box, tape on the Ballot Box label, and sit the elf on top with the blank ballots beside it.',
+    fun: 'Each child writes or draws a name idea. Pick the top 3 and vote with a show of hands. Fill in the "Meet Our Elf" sign.',
+    need: 'Tissue box, pencils',
+    printables: [
+      { title: 'Name Ballots', html: `<h2 class="ptitle">Name Our Elf!</h2><div class="psub">Cut apart. Write or draw your best elf name, then drop it in the ballot box.</div><div class="ballots">${ballot.repeat(8)}</div>` },
+      { title: 'Meet Our Elf Sign', html: `<div class="meet"><h2 class="ptitle huge">Meet Our Elf!</h2><div class="meet-elf">${elf({ w: 230 })}</div><div class="meet-lines"><div class="mrow"><span>My name is</span><div class="mline"></div></div><div class="mrow"><span>I arrived on</span><div class="mline pre">December 1, 2026</div></div><div class="mrow"><span>I live at</span><div class="mline pre">The North Pole</div></div><div class="mrow"><span>Please</span><div class="mline pre red">look, but don't touch!</div></div></div></div>` },
+    ],
+    props: [{ note: 'Tape the label on a tissue box. Hang the sign above it on voting day.', html: sign({ w: 7, h: 2.4, bg: GREEN, title: `${star(34)} Ballot Box ${star(34)}`, sub: 'Name the elf! Drop your vote here.', size: 44 }) + sign({ w: 4.6, h: 3.6, bg: '#fff', fg: RED, bd: RED, title: 'Vote Here!', icon: `<div class="row">${K.check}${K.arrowDown}</div>`, size: 40 }) }],
+    propList: 'Ballot Box label, "Vote Here!" sign' },
+  { n: 3, dow: 'Thu', d: 3, title: 'The Elf Wrote the Morning Message',
+    elfDoes: 'Wrote today\'s morning message... with LOTS of mistakes!', idea: 'Kids become editors and fix the spelling.',
+    scene: 'Sit the elf on the board ledge holding a marker. Copy the elf\'s message onto your board (or use the laminated message board).',
+    fun: 'Read it together and act shocked! Kids spot the 7 mistakes and fix them, then do the "Fix the Elf\'s Message" sheet.',
+    need: 'A dry-erase marker',
+    printables: [{ title: 'Fix the Elf\'s Message', html: `<h2 class="ptitle">Fix the Elf's Message!</h2><div class="psub">Oh no! The elf wrote our morning message. Circle the mistakes, then write each word the right way.</div>
+      <div class="mm-board hand">${mmText}</div>
+      <div class="fixgrid">${mmFix.slice(0, 6).map(([w]) => `<div class="fixrow"><span class="bad">${w}</span><span class="arrow">→</span>${hw(1)}</div>`).join('')}</div>
+      <div class="footelf">${elf({ w: 46 })}<span>Bonus: Write a better message for the elf on the back!</span></div><div class="byline">Editor: ______________________</div>` }],
+    props: [
+      { note: 'Write the elf\'s message on this board with a dry-erase marker, or copy it onto your whiteboard. The answer key below is for you.', html: lam(`<div class="mmprop"><div class="mm-t">${star(26)} Morning Message by the Elf ${star(26)}</div>${dryBox(6.7, 2.6)}</div>`) + lam(`<div class="keycard"><div class="kc-t">Teacher Card: the Elf's Message</div><div class="kc-msg hand">${mmText}</div><div class="kc-k"><b>Answer key (7 mistakes):</b> ${mmFix.map(([a, b]) => `${a} → <b>${b}</b>`).join(' · ')}</div></div>`) },
+      { note: 'Pin an Elf Editor badge on each helper who finds a mistake. Collect them at the end of the day to reuse.', html: `<div class="badges">${Array.from({ length: 12 }, () => free(`<div class="badge"><div class="b-in">${elf({ w: 34 })}<b>ELF</b><span>EDITOR</span></div></div>`)).join('')}</div>` },
+    ],
+    propList: 'Dry-erase "Morning Message by the Elf" board, teacher card with answer key, 12 "Elf Editor" badges' },
+  { n: 4, dow: 'Fri', d: 4, title: 'Zip Line Adventure',
+    elfDoes: 'Zips across the room on a string.', idea: 'Draw where the elf will zip next.',
+    scene: 'Tie yarn from a high spot to a lower one (e.g., a cabinet to a chair). Hang the elf from it with a binder clip.',
+    fun: 'Talk about where the elf might zip next, then draw it.',
+    need: 'Yarn or string, a binder clip',
+    printables: [{ title: 'Where Will I Zip Next?', html: `<h2 class="ptitle">Where Will I Zip Next?</h2><div class="psub">Draw where you think the elf will zip to next!</div>
+      <div class="drawbox zip"><svg class="zipline" viewBox="0 0 600 120" preserveAspectRatio="none"><path d="M0 10 Q300 60 600 110" stroke="#888" stroke-width="3" stroke-dasharray="10 8" fill="none"/></svg><div class="zipelf">${elf({ w: 70 })}</div></div>
+      <div class="wrow">I think the elf will zip to</div>${hw(2)}<div class="byline">Name: ______________________</div>` }],
+    props: [{ note: 'Clip the bubble to the zip line. Punch holes in the flags and string them along the line.', html: bubble({ w: 4.8, h: 3.2, text: 'Wheee!', size: 54 }) + `<div class="flags">${['Z', 'I', 'P', '*', 'L', 'I', 'N', 'E'].map((ch, i) => K.pennant(ch, [RED, GREEN, GOLD][i % 3])).join('')}</div>` }],
+    propList: '"Wheee!" speech bubble, zip line flags' },
+  { n: 5, dow: 'Mon', d: 7, title: 'The Elf Graded the Teacher',
+    elfDoes: 'Left a report card... for the TEACHER!', idea: 'Read the silly grades, then kids grade the elf.',
+    scene: 'Sit the elf on your desk with the giant red pen, holding the Teacher Report Card.',
+    fun: 'Read your "grades" aloud with lots of drama ("Needs Improvement in singing?!"). Then kids grade the elf on their own report card.',
+    need: 'Nothing extra!',
+    printables: [{ title: 'Grade the Elf!', html: `<h2 class="ptitle">Grade the Elf!</h2><div class="psub">The elf graded our teacher, so now it's your turn! Color the stars: 3 stars = super, 1 star = needs practice.</div>
+      <table class="rc"><tr><th>Subject</th><th>Grade</th></tr>${['Hiding', 'Being silly', 'Following the rules', 'Dancing', 'Telling jokes', 'Keeping secrets'].map((s) => `<tr><td>${s}</td><td class="stars">${star(46, '#fff')}${star(46, '#fff')}${star(46, '#fff')}</td></tr>`).join('')}</table>
+      <div class="q">Teacher comments: The elf is</div>${hw(2)}<div class="byline">Teacher: ______________________ (that's you!)</div>` }],
+    props: [{ note: 'The elf "holds" the pen. Write your own name on the report card with a dry-erase marker, and add your own silly grades in the blank rows.', html: lam(`<div class="trc"><div class="trc-h"><div><div class="trc-k">Official North Pole</div><div class="trc-t">Report Card</div></div>${elf({ w: 56 })}</div><div class="trc-s">Student: ${dryBox(3.6, .45)}</div>
+      <table>${teacherGrades.map(([s, g]) => `<tr><td>${s}</td><td class="hand">${g}</td></tr>`).join('')}<tr><td>${dryBox(2.9, .38)}</td><td>${dryBox(1.9, .38)}</td></tr></table>
+      <div class="trc-c"><b>Elf's comments:</b> <span class="hand">Great teacher! Could use more recess.</span></div><div class="trc-sig">Graded by: <span class="hand">The Elf</span></div></div>`) + free(A.redPen) }],
+    propList: 'Teacher Report Card (with dry-erase rows), giant "Elf Grading Pen"' },
+  { n: 6, dow: 'Tue', d: 8, title: 'Secret Roll-Call Password',
+    elfDoes: 'Left a note: "Don\'t say \'here\' today!"', idea: 'Answer attendance with "Jingle Banana!"',
+    scene: 'Prop the elf on your attendance clipboard (or by the door) holding the "Today\'s Secret Password" sign.',
+    fun: 'Take attendance. Everyone answers with the password instead of "here." Later, kids invent new passwords for the coming days.',
+    need: 'A dry-erase marker',
+    printables: [{ title: 'Silly Password Maker', html: `<h2 class="ptitle">Silly Password Maker</h2><div class="psub">Circle one word from each list to make a new secret password for the elf!</div>
+      <div class="pwcols"><div class="pwcol"><h3>Word 1</h3>${['Jingle', 'Snowman', 'Reindeer', 'Candy Cane', 'Twinkle', 'Frosty'].map((w) => `<div>${w}</div>`).join('')}</div><div class="pwplus">+</div><div class="pwcol g"><h3>Word 2</h3>${['Banana', 'Burp', 'Pancake', 'Noodle', 'Pickle', 'Kazoo'].map((w) => `<div>${w}</div>`).join('')}</div></div>
+      <div class="wrow">My silly password is:</div>${hw(1)}<div class="q">Draw your password!</div><div class="drawbox"></div><div class="byline">Name: ______________________</div>` }],
+    props: [
+      { note: 'Write the password on the sign with a dry-erase marker, or tape a password card in the window. Use a new card each morning for extra giggles!', html: lam(`<div class="pwsign"><div class="pw-k">Shhh! Today's</div><div class="pw-t">Secret Password</div><div class="pw-s">Don't say "here." Say:</div>${dryBox(6.2, 1.4)}${elf({ w: 50 })}</div>`) },
+      { note: 'Ten ready-made passwords. Keep them on a ring and pull one out any morning.', html: `<div class="pwcards">${passwords.map((p, i) => lam(`<div class="pwc" style="background:${[RED, GREEN, BLUE, GOLD, '#8e44ad'][i % 5]}"><small>Today's password:</small><b>${p}!</b></div>`, { r: '.12in' })).join('')}</div>` },
+    ],
+    propList: 'Dry-erase "Secret Password" sign, 10 password cards' },
+  { n: 7, dow: 'Wed', d: 9, title: 'Elf Bubble Bath',
+    elfDoes: 'Relaxes in a cotton-ball "bubble bath" with a rubber duck.', idea: 'Guess how many bubbles, then count them.',
+    scene: 'Fill a bowl or mug with cotton balls. Tuck the elf in with the rubber duck, towel, and shampoo bottle. Hang the "Do Not Disturb" sign nearby.',
+    fun: 'Kids estimate how many "bubbles" are in the bath, then count them together. Was anyone close?',
+    need: 'A bowl or mug, cotton balls (keep them to reuse)',
+    printables: [{ title: 'Bubble Bath Estimation', html: `<h2 class="ptitle">How Many Bubbles?</h2><div class="psub">The elf is taking a bubble bath! Guess how many bubbles are in the tub, then count them.</div>
+      <div class="est"><div><div class="est-l">My guess</div><div class="est-b"></div></div><div><div class="est-l">Real count</div><div class="est-b"></div></div></div>
+      <div class="q">My guess was... <span class="circleopts">(circle one)</span></div><div class="opts"><span>Too high</span><span>Too low</span><span>Just right!</span></div>
+      <div class="q">Draw the elf in the bubble bath:</div><div class="drawbox"></div><div class="byline">Name: ______________________</div>` }],
+    props: [{ note: 'Tuck the duck, towel, and shampoo bottle in with the elf. Hang the door hanger on the bowl or mug.', html: sign({ w: 4.6, h: 2.6, bg: BLUE, title: 'Elf Spa', sub: 'Bubble bath in progress!', size: 50, flakes: true }) + lam(`<div class="hanger"><div class="hole"></div><div class="h-t">Shhh!</div><div class="h-s">Elf in the<br/>bath!</div>${A.duck.replace('width="190" height="170"', 'width="110" height="98"')}<div class="h-z">Do not disturb</div></div>`, { r: '.3in' }) + free(A.duck) + free(A.towel) + free(A.shampoo) }],
+    propList: '"Elf Spa" sign, "Do Not Disturb" door hanger, rubber duck, towel, shampoo bottle' },
+  { n: 8, dow: 'Thu', d: 10, title: 'Hide &amp; Seek Hunt',
+    elfDoes: 'Hides and leaves rhyming clues.', idea: 'Follow the clues to find the elf!',
+    scene: 'Hide the elf in a final spot. Tape Clue 1 to the board and the other clues at each spot (door, library, sink, cubbies, pencil sharpener).',
+    fun: 'Read each clue together and walk to the next spot until you find the elf. Swap spots to fit your room.',
+    need: 'Tape',
+    printables: [{ title: 'Scavenger Hunt Clues', html: `<h2 class="ptitle">Elf Hide &amp; Seek Hunt</h2><div class="psub">Cut apart (or laminate to reuse). The small gray note on each card says where to put it.</div>
+      <div class="clues">${clues.map(([t, c, w], i) => `<div class="clue cut"><div class="cnum">${i === 5 ? elf({ w: 36 }) : i + 1}</div><div class="cl-t">${t}</div><div class="cl-c hand">${c}</div><div class="cl-w">Teacher: ${w}</div></div>`).join('')}</div>` }],
+    props: [{ note: 'Cut out the lens center before laminating. The laminate fills it in to make a see-through lens!', html: sign({ w: 5.4, h: 3.4, bg: GREEN, title: 'Can you<br/>find me?', size: 46, icon: K.qmarks }) + free(K.magnifier) }],
+    propList: '"Can you find me?" sign, magnifying glass' },
+  { n: 9, dow: 'Fri', d: 11, title: 'Tangled in Lights',
+    elfDoes: 'Got all tangled up in paper holiday lights!', idea: 'Solve the maze to untangle the elf.',
+    scene: 'String the paper bulbs on yarn and loosely wrap them around the elf. Add the "HELP!" bubble.',
+    fun: 'Kids solve the maze to get the elf out of the lights. Then "untangle" the real elf together and hang the lights up.',
+    need: 'Yarn',
+    printables: [{ title: 'Untangle the Elf Maze', html: `<h2 class="ptitle">Untangle the Elf!</h2><div class="psub">The elf is stuck in the holiday lights! Draw a path from the elf to the star to help it get out.</div>
+      <div class="mazewrap"><div class="mz-start">${elf({ w: 52 })}<span>Start</span></div><div class="mz">${A.maze(9, 11, 11)}</div><div class="mz-end">${star(54)}<span>Finish!</span></div></div><div class="byline">Name: ______________________</div>` }],
+    props: [{ note: 'Punch a hole in each bulb\'s cap and string them on yarn. They make a cute classroom garland after the elf is free!', html: bubble({ w: 5.2, h: 3, text: 'HELP!<br/><span style="font-size:20pt">I\'m all tangled up!</span>', size: 44 }) + `<div class="bulbs">${Array.from({ length: 16 }, (_, i) => free(A.bulb([RED, GREEN, GOLD, BLUE][i % 4]))).join('')}</div>` }],
+    propList: '"HELP! I\'m tangled!" bubble, 16 paper light bulbs' },
+  { n: 10, dow: 'Mon', d: 14, title: 'The Elf Took Over the Desk',
+    elfDoes: 'Sits in the teacher\'s chair as "Teacher Elf."', idea: 'Take the elf\'s silly pop quiz!',
+    scene: 'Seat the elf in your chair with the "Teacher Elf" nameplate, mini apple, and "Pop Quiz!" card.',
+    fun: 'The elf is in charge! Hand out the elf\'s silly pop quiz and share the funniest answers.',
+    need: 'Nothing extra!',
+    printables: [{ title: 'The Elf\'s Pop Quiz', html: `<div class="report-head"><h2 class="ptitle">The Elf's Pop Quiz!</h2><div class="stamp">NO PEEKING</div></div><div class="fields"><div>Name: ________________________</div><div>Teacher: <span class="hand big2">Teacher Elf</span></div></div>
+      <div class="pq"><b>1.</b> How many candy canes tall is your teacher? <span class="nbox"></span></div>
+      <div class="pq"><b>2.</b> Circle the silliest:<div class="opts small"><span>a reindeer in sneakers</span><span>a snowman in sunglasses</span><span>a penguin in pajamas</span></div></div>
+      <div class="pq"><b>3.</b> Write a word that rhymes with <b>ELF</b>: ${hw(1, 'style="display:inline-block;width:3in;vertical-align:middle;margin:0"')}</div>
+      <div class="pq"><b>4.</b> Count the jingle bells: <span class="bells">${Array.from({ length: 7 }, () => `<svg width="34" height="34" viewBox="0 0 20 20"><circle cx="10" cy="11" r="7.5" fill="${GOLD}" stroke="${INK}" stroke-width="1.2"/><line x1="4" y1="11" x2="16" y2="11" stroke="${INK}" stroke-width="1"/><circle cx="10" cy="15" r="1.4" fill="${INK}"/></svg>`).join('')}</span> <span class="nbox"></span></div>
+      <div class="pq"><b>5.</b> Draw what the elf eats for breakfast:</div><div class="drawbox"></div>
+      <div class="footelf">${elf({ w: 46 })}<span>Grade: A+ for being awesome! (Everyone passes!)</span></div>` }],
+    props: [{ note: 'Fold the nameplate on the dotted line so it stands up. Write a quiz question on the card with a dry-erase marker, if you like.', html: lam(`<div class="tent"><div class="tent-top">${elf({ w: 44 })} Teacher Elf ${elf({ w: 44 })}</div><div class="tent-fold">fold here</div><div class="tent-bot">Teacher Elf</div></div>`, { r: '.08in' }) + free(A.apple) + lam(`<div class="quizcard"><div class="qc-t">POP QUIZ!</div>${dryBox(4, 1.4)}<div class="qc-s">— Teacher Elf</div></div>`) }],
+    propList: '"Teacher Elf" desk nameplate, mini apple, dry-erase "Pop Quiz!" card' },
+  { n: 11, dow: 'Tue', d: 15, title: 'Wrapping Paper Mischief',
+    elfDoes: 'Wrapped the teacher\'s stapler and tape in paper!', idea: 'Unwrap them and file a Mischief Report.',
+    scene: 'Wrap 2 or 3 small desk items (stapler, tape, a mug) in wrapping paper. Leave the elf on top with tape stuck to its hand.',
+    fun: 'Let students help unwrap. Then they fill out a Mischief Report about what they think happened.',
+    need: 'Wrapping paper or newspaper, tape',
+    printables: [{ title: 'Elf Mischief Report', html: `<div class="report-head"><h2 class="ptitle">Elf Mischief Report</h2><div class="stamp">CASE FILE</div></div>
+      <div class="fields"><div>Reporter: ________________________</div><div>Date: December ____, 2026</div></div>
+      <div class="q">1. Draw what the elf did:</div><div class="drawbox short"></div>
+      <div class="q">2. Was the elf... <span class="circleopts">(circle one)</span></div><div class="opts"><span>Naughty</span><span>Silly</span><span>BOTH!</span></div>
+      <div class="q">3. Why do you think the elf did it?</div>${hw(2)}<div class="footelf">${elf({ w: 50 })}<span>Case closed! Thank you, Detective.</span></div>` }],
+    props: [{ note: 'Prop the sign against the wrapped items. Tape the caution strips around the "crime scene."', html: sign({ w: 5.6, h: 3.4, bg: '#fff', fg: RED, bd: GREEN, title: 'Oops!', sub: `<span style="color:${INK}">I got a little carried away...</span>`, size: 64 }) + Array.from({ length: 2 }, () => lam(`<div class="caution"><span>CAUTION: ELF WRAPPING ZONE</span></div>`, { r: '.06in' })).join('') }],
+    propList: '"Oops!" sign, 2 caution strips' },
+  { n: 12, dow: 'Wed', d: 16, title: 'North Pole Mail',
+    elfDoes: 'Brought a North Pole mailbox.', idea: 'Write letters to Santa.',
+    scene: 'Tape the label on a shoebox and sit the elf on top holding a mini envelope.',
+    fun: 'Kids write or draw a letter to Santa and "mail" it. The elf takes the letters to the North Pole tonight!',
+    need: 'A shoebox',
+    printables: [{ title: 'Letter to Santa', html: `<div class="letter-head">${elf({ w: 70 })}<h2 class="ptitle">North Pole Mail</h2></div><div class="santa"><div class="srow hand">Dear Santa,</div><div class="srow">This year I was kind when I</div>${hw(1)}<div class="srow">My favorite thing about December is</div>${hw(1)}<div class="srow">I would love</div>${hw(1)}<div class="q">Here is a picture for you:</div><div class="drawbox short2"></div><div class="srow">Love,</div>${hw(1, 'style="width:60%"')}</div>` }],
+    props: [{ note: 'Tape the label on a shoebox mailbox. The elf can "carry" a mini envelope.', html: lam(`<div class="mailbox"><div class="mb-stamp">${star(40, RED)}<span>NORTH POLE<br/>POST</span></div><div><div class="mb-t">North Pole Mail</div><div class="mb-s">Letters to Santa go here!</div></div></div>`) + `<div class="envs">${K.envelope.repeat(4)}</div>` }],
+    propList: '"North Pole Mail" label, 4 mini envelopes' },
+  { n: 13, dow: 'Thu', d: 17, title: 'Elf Friends Visit',
+    elfDoes: 'Invited 15 paper elf friends to hide.', idea: 'Find all the hiding friends!',
+    scene: 'Hide the mini paper elves around the room: on shelves, under chairs, in plants. The real elf holds the sign.',
+    fun: 'Find all 15 friends, counting them together on the dry-erase counter as they turn up.',
+    need: 'Tape',
+    printables: [{ title: 'Mini Elf Friends', html: `<h2 class="ptitle">Mini Elf Friends</h2><div class="psub">Cut out the 15 elf friends (laminate them to reuse!) and hide them around the room.</div><div class="minis">${Array.from({ length: 15 }, () => `<div class="mini cut">${elf({ w: 84 })}</div>`).join('')}<div class="mini cut sign"><div>My friends are hiding!<br/><b>Can you find all 15?</b></div></div></div>` }],
+    props: [{ note: 'Update the counter with a dry-erase marker as students find each paper elf friend.', html: sign({ w: 6, h: 3.2, bg: RED, title: 'My friends are hiding!', sub: 'Can you find them all?', size: 36, icon: `<div class="row">${elf({ w: 60 })}${elf({ w: 60 })}${elf({ w: 60 })}</div>` }) + lam(`<div class="counter"><div class="ct-t">Elf Friends Found</div><div class="ct-row">${dryBox(1.6, 1.2)}<span>/ 15</span></div></div>`) }],
+    propList: '"My friends are hiding!" sign, dry-erase counter' },
+  { n: 14, dow: 'Fri', d: 18, title: 'Tic-Tac-Toe Challenge',
+    elfDoes: 'Challenged a stuffed animal to tic-tac-toe.', idea: 'Play with a partner. Send home PJ Day invites!',
+    scene: 'Set the elf across from a stuffed animal at the game board, mid-game, with the "Your move!" bubble.',
+    fun: 'Who\'s winning? Kids play tic-tac-toe with a partner. Send home the PJ Day invitations for Monday.',
+    need: 'A stuffed animal',
+    printables: [
+      { title: 'Tic-Tac-Toe vs. the Elf', html: `<h2 class="ptitle">Tic-Tac-Toe Challenge!</h2><div class="psub">Play with a partner. One player draws candy canes, the other draws wreaths.</div><div class="ttts">${Array.from({ length: 6 }, (_, i) => `<div class="ttt"><div class="ttt-l">Game ${i + 1}</div><svg viewBox="0 0 90 90" width="100%"><g stroke="${GREEN}" stroke-width="3.5" stroke-linecap="round"><line x1="30" y1="4" x2="30" y2="86"/><line x1="60" y1="4" x2="60" y2="86"/><line x1="4" y1="30" x2="86" y2="30"/><line x1="4" y1="60" x2="86" y2="60"/></g></svg><div class="ttt-w">Winner: __________</div></div>`).join('')}</div>` },
+      { title: 'PJ Day Invitations', html: `<h2 class="ptitle">PJ Day Invitations</h2><div class="psub">Send these home today for Monday's PJ Day!</div><div class="invites">${invite.repeat(4)}</div>` },
+    ],
+    props: [
+      { note: 'Laminate the board and draw moves with a dry-erase marker, or use the candy cane and wreath game pieces.', html: lam(`<div class="tttboard"><div class="tb-t">Elf vs. ${dryBox(1.8, .45)}</div><svg viewBox="0 0 90 90" width="100%"><g stroke="${RED}" stroke-width="3" stroke-linecap="round"><line x1="30" y1="4" x2="30" y2="86"/><line x1="60" y1="4" x2="60" y2="86"/><line x1="4" y1="30" x2="86" y2="30"/><line x1="4" y1="60" x2="86" y2="60"/></g></svg></div>`) },
+      { note: 'Five candy canes and five wreaths. The bubble goes next to the elf.', html: `<div class="pieces">${Array.from({ length: 5 }, () => free(A.candyX)).join('')}${Array.from({ length: 5 }, () => free(A.wreathO)).join('')}</div>` + bubble({ w: 4.6, h: 3, text: 'Your move!', size: 44, color: GREEN }) },
+    ],
+    propList: 'Dry-erase game board, 5 candy cane + 5 wreath pieces, "Your move!" bubble' },
+  { n: 15, dow: 'Mon', d: 21, title: 'PJ Day Photo Booth',
+    elfDoes: 'Wears pajamas next to a photo booth.', idea: 'Pose with props for PJ Day photos!',
+    scene: 'Dress the elf in pajamas (a sock "sleeping bag" or a tissue "blanket" works) next to the photo booth props.',
+    fun: 'Kids pose with the props for class photos (follow your school\'s photo policy).',
+    need: 'Craft sticks, tape, a phone or camera',
+    printables: [{ title: 'Photo Booth Props', html: `<h2 class="ptitle">Elf Photo Booth Props</h2><div class="psub">Cut out each prop and tape it to a craft stick. Strike a pose!</div><div class="props">${photoProps.map(([n, s]) => `<div class="prop cut"><div class="prop-art">${s}</div><div class="prop-n">${n}</div></div>`).join('')}</div>` }],
+    props: [{ note: 'Cut out the frame\'s center window before laminating. Kids hold the frame up for photos.', html: lam(`<div class="banner" style="background:${GREEN};color:#fff;width:7.2in">${star(32)} Happy PJ Day! ${star(32)}</div>`, { r: '.1in' }) + lam(`<div class="frame2"><div class="fr-t">I'm on the Nice List!</div><div class="fr-win">cut out</div><div class="fr-b">${elf({ w: 40 })} Classroom Elf Photo Booth · 2026 ${elf({ w: 40 })}</div></div>`, { r: '.2in' }) }],
+    propList: '"Happy PJ Day!" banner, "Nice List" photo frame' },
+  { n: 16, dow: 'Tue', d: 22, title: 'Goodbye, Elf!',
+    elfDoes: 'Sits by its door with a goodbye letter.', idea: 'Read it and hand out Nice List certificates.',
+    scene: 'Sit the elf next to its door, just like Day 1, with the Goodbye Letter and a stack of certificates.',
+    fun: 'Read the letter, hand out certificates, and wave goodbye as the elf "flies home" through its door tonight.',
+    need: 'Candy canes (optional)',
+    printables: [
+      { title: 'Goodbye Letter', html: goodbyeLetter },
+      { title: 'Nice List Certificate', landscape: true, frame: false, html: `<div class="cert"><div class="cert-inner"><div class="cert-elf left">${elf({ w: 110 })}</div><div class="cert-elf right">${elf({ w: 110 })}</div><div class="cert-k">Official</div><div class="cert-t">Nice List Certificate</div><div class="cert-s">This certifies that</div><div class="cert-name"></div><div class="cert-s">was spotted being <b>kind</b>, <b>helpful</b>, and full of <b>holiday cheer</b><br/>by our Classroom Elf and is officially on the <span class="red">Nice List!</span></div><div class="cert-sigs"><div><div class="sigline hand">Santa Claus</div>North Pole</div><div><div class="sigline pre">December 22, 2026</div>Date</div><div><div class="sigline"></div>Teacher</div></div></div></div>` },
+    ],
+    props: [{ note: 'The elf holds these on its last day. Save them for next year!', html: sign({ w: 6, h: 3.4, bg: RED, title: 'See you<br/>next year!', size: 48, flakes: true }) + bubble({ w: 4.8, h: 3.2, text: 'Bye,<br/>friends!', size: 40, color: GREEN, tail: 'right' }) }],
+    propList: '"See you next year!" sign, "Bye, friends!" bubble' },
+];
 
-// P17 Goodbye letter
-pages.push(printable(17, `
-<div class="letter">
-  <div class="letter-head">${elf({ w: 90 })}<h2 class="ptitle">Goodbye for Now!</h2></div>
-  <div class="hand">
-    <p>Dear Friends,</p>
-    <p>Today is my last day in your classroom. Tonight I'm flying home to the North Pole to help Santa get ready for the big night!</p>
-    <p>I had SO much fun with you: snowball fights, fishing, zip lining, story time, and our PJ Day photo booth!</p>
-    <p>I told Santa how kind, helpful, and silly you all are. You made my heart as warm as a cup of hot cocoa.</p>
-    <p>Have a wonderful winter break. Be kind, read lots of books, and get plenty of rest.</p>
-    <p>I'll miss you! See you next year!</p>
-    <p class="sign">Love,<br/><span class="big">____________________</span></p>
+const bonus = [
+  { n: 'A', title: 'Elf Art Studio', elfDoes: 'Caught coloring, with crayons everywhere.', idea: 'Color your own elf.',
+    scene: 'Leave the elf lying on a half-colored page surrounded by crayons, next to the easel and palette.', fun: 'Free coloring time. Hang finished pages as an "Elf Art Gallery."', need: 'Crayons',
+    printables: [{ title: 'Elf Coloring Page', html: `<h2 class="ptitle outline-title">Our Classroom Elf</h2><div class="color-scene"><svg class="presents" viewBox="0 0 600 220" width="100%"><g stroke="${INK}" stroke-width="3" fill="#fff" stroke-linejoin="round"><rect x="20" y="90" width="130" height="120"/><rect x="75" y="90" width="20" height="120"/><path d="M85 90 Q55 50 45 75 Q60 90 85 90 Q115 50 125 75 Q110 90 85 90"/><rect x="450" y="120" width="130" height="90"/><rect x="450" y="155" width="130" height="18"/><path d="M515 120 Q490 85 480 105 Q495 120 515 120 Q540 85 550 105 Q535 120 515 120"/><rect x="165" y="150" width="70" height="60"/><rect x="195" y="150" width="12" height="60"/></g></svg><div class="color-elf">${elf({ w: 380, outline: true })}</div><div class="cflakes">${[0, 1, 2, 3, 4, 5].map((i) => `<span style="left:${[4, 80, 12, 88, 40, 62][i]}%;top:${[2, 6, 40, 38, 0, 3][i]}%">${snowflake(46, INK)}</span>`).join('')}</div></div><div class="byline center">Colored by: ______________________</div>` }],
+    props: [{ note: 'Draw a silly "masterpiece" on the dry-erase canvas. Wipe it clean and reuse it each year.', html: free(K.easel) + free(K.palette) + lam(`<div class="banner" style="background:${GOLD};color:${INK}">${star(30, '#fff')} Elf Art Gallery ${star(30, '#fff')}</div>`, { r: '.1in' }) }],
+    propList: 'Dry-erase easel, paint palette, "Elf Art Gallery" banner' },
+  { n: 'B', title: 'Snow Angel', elfDoes: 'Makes a "snow angel" on white paper.', idea: 'Play Roll &amp; Build a Snowman.',
+    scene: 'Lay the elf on a sheet of white paper with arms and legs out, surrounded by the laminated snowflakes. No mess!', fun: 'Play Roll &amp; Build a Snowman with a partner or in small groups.', need: 'White paper, dice',
+    printables: [{ title: 'Roll &amp; Build a Snowman', html: `<h2 class="ptitle">Roll &amp; Build a Snowman</h2><div class="psub">Take turns rolling a die. Draw the part that matches your roll. Start with a 1! First to finish the whole snowman wins.</div><div class="rolltable">${[1, 2, 3, 4, 5, 6].map((n) => `<div class="rrow">${die(n)}<div class="rpart">${snowParts[n]}</div><div class="rname">${snowNames[n]}</div></div>`).join('')}</div><div class="buildbox"><div class="ground"></div><span>Build your snowman here!</span></div><div class="byline">Name: ______________________</div>` }],
+    props: [{ note: 'Scatter the snowflakes around the elf\'s "snow angel," or tape them to the window.', html: sign({ w: 6, h: 3.2, bg: BLUE, title: 'Let it snow!', sub: 'Love, your Elf', size: 52, flakes: true }) + `<div class="discs">${Array.from({ length: 6 }, () => free(`<div class="disc">${K.flakeDisc}<span>${snowflake(120, BLUE)}</span></div>`)).join('')}</div>` }],
+    propList: '"Let it snow!" sign, 6 snowflakes' },
+  { n: 'C', title: 'Elf Movie Morning', elfDoes: 'Has popcorn and tickets ready.', idea: 'Watch a short holiday cartoon.',
+    scene: 'Set the elf in front of the board with the popcorn box, the marquee, and a stack of tickets.', fun: 'Hand out tickets, then watch a short holiday cartoon or read-aloud video (5–15 min).', need: 'A short video',
+    printables: [{ title: 'Elf Cinema Tickets', html: `<h2 class="ptitle">Elf Cinema Tickets</h2><div class="psub">Cut apart and hand one to every movie-goer!</div><div class="tickets">${ticket.repeat(10)}</div>` }],
+    props: [{ note: 'Write the movie name on the marquee with a dry-erase marker. The elf can hold the popcorn box.', html: lam(`<div class="marquee"><div class="mq-in"><div class="mq-t">NOW SHOWING</div>${dryBox(5.2, 1.3)}<div class="mq-s">Elf Cinema · Showtime: ${dryBox(1.4, .4)}</div></div></div>`, { r: '.15in' }) + free(K.popcorn) }],
+    propList: 'Dry-erase "Now Showing" marquee, popcorn box' },
+  { n: 'D', title: 'Story Time with Stuffies', elfDoes: 'Reads a book to the stuffed animals.', idea: 'Buddy reading with elf bookmarks.',
+    scene: 'Set the elf in the reading corner with an open book, the mini books, and stuffed animals sitting in a circle.', fun: 'Give everyone a bookmark to color. Do buddy reading or read a holiday story aloud.', need: 'A picture book, stuffed animals',
+    printables: [{ title: 'Elf Bookmarks', html: `<h2 class="ptitle">Elf Bookmarks</h2><div class="psub">Color, cut out, and use with your favorite book!</div><div class="bookmarks">${bms.map((t) => `<div class="bm cut"><div class="bm-t">${t}</div>${elf({ w: 140, outline: true })}<div class="bm-flakes">${snowflake(28, INK)}${snowflake(20, INK)}</div><div class="bm-name">Name:<br/>____________</div></div>`).join('')}</div>` }],
+    props: [{ note: 'Stand the mini books around the elf and stuffed animals in the reading corner.', html: sign({ w: 6.4, h: 2.6, bg: GREEN, title: 'Shhh... Story Time!', size: 38, sub: 'The elf is reading to friends.' }) + `<div class="books">${K.book('Santa\'s Busy Night', '#1d3b6f', K.moon)}${K.book('The Sleepy Snowman', '#2f8fce', K.snowman)}${K.book('Elf Jokes for Kids', RED, elf({ w: 52 }))}</div>` }],
+    propList: '"Story Time" sign, 3 mini books' },
+  { n: 'E', title: 'Sticky-Note Prank', elfDoes: 'Covered the door in "sticky notes" full of jokes.', idea: 'Read the jokes together.',
+    scene: 'Tape the laminated "sticky notes" all over the classroom door or your desk with tape loops. The elf holds the sign.', fun: 'Kids find and read the notes (you read the jokes aloud). Take them down and reuse them next year!', need: 'Tape loops',
+    printables: [],
+    props: [{ note: 'Twelve reusable "sticky notes" plus the elf\'s sign. Tape loops on the back make them easy to move.', html: sign({ w: 5.6, h: 2.2, bg: RED, title: 'The Elf Was Here!', size: 34 }) + `<div class="stickies">${stickyNotes.map(([c, t], i) => lam(`<div class="sticky hand" style="background:${c};transform:rotate(${[-3, 2, -1, 3, -2, 1][i % 6]}deg)"><div>${t}</div></div>`, { r: '.04in' })).join('')}</div>` }],
+    propList: '"The Elf Was Here!" sign, 12 joke "sticky notes"' },
+  { n: 'F', title: 'Elf Disco Party', elfDoes: 'Throws a disco party with the stuffed animals.', idea: 'Have a 2-minute dance break!',
+    scene: 'Hang the disco ball over the elf and stuffed animals and add the "Dance Party" banner.', fun: 'Play a song for a dance break. Draw a dance move card for each round; hold up "Freeze!" to stop.', need: 'A song to play',
+    printables: [],
+    props: [
+      { note: 'Hang the disco ball from a string above the elf. Hold up the "Freeze!" sign to stop the music.', html: lam(`<div class="banner" style="background:#8e44ad;color:#fff;width:7.2in">${star(32)} Elf Dance Party! ${star(32)}</div>`, { r: '.1in' }) + free(A.discoBall) + sign({ w: 3.4, h: 3.4, bg: BLUE, title: 'FREEZE!', size: 40, flakes: true }) },
+      { note: 'Six dance move cards. Draw one for each song!', html: `<div class="moves">${danceMoves.map(([t, s], i) => lam(`<div class="move" style="border-color:${[RED, GREEN, BLUE, GOLD, '#8e44ad', RED][i]}"><div class="mv-n">${i + 1}</div><div class="mv-t">${t}</div><div class="mv-s">${s}</div>${elf({ w: 46 })}</div>`)).join('')}</div>` },
+    ],
+    propList: '"Elf Dance Party!" banner, disco ball, "Freeze!" sign, 6 dance move cards' },
+];
+
+// ---------------------------------------------------------------------------
+// Special prop layouts (Day 1 doors)
+// ---------------------------------------------------------------------------
+const special = {
+  DOORS0: `<div class="doors">${A.doors.slice(0, 2).map(([n, s]) => `<div>${free(s)}<div class="door-n">${n}</div></div>`).join('')}</div>`,
+  DOORS1: `<div class="doors">${A.doors.slice(2, 4).map(([n, s]) => `<div>${free(s)}<div class="door-n">${n}</div></div>`).join('')}</div>`,
+  DOORS2: `<div class="doors">${A.doors.slice(4, 6).map(([n, s]) => `<div>${free(s)}<div class="door-n">${n}</div></div>`).join('')}</div>`,
+  DOORACC: free(A.welcomeMat) + free(A.crossing(elf({ w: 60 }))) + free(A.miniWreath) + free(A.lantern) + lam(`<div class="knock"><div>Knock 3 times</div><b>for elf magic!</b>${star(26)}</div>`, { r: '.15in' }) + lam(`<div class="knock g"><div>Elf Door</div><b>Do not lock!</b></div>`, { r: '.15in' }),
+  ARRIVE: sign({ w: 6.2, h: 3.4, title: 'I\'m Here!', sub: 'Hello from the North Pole!', size: 58, flakes: true }) +
+    lam(`<div class="rules"><div class="rt">Elf Rules</div><div class="rr">${K.eye}<span>Look at me</span></div><div class="rr">${K.talk}<span>Talk to me</span></div><div class="rr">${K.noTouch}<span>Please don't touch me!<small>It keeps my Christmas magic.</small></span></div></div>`),
+};
+
+// ---------------------------------------------------------------------------
+// Page assembly
+// ---------------------------------------------------------------------------
+const label = (e) => (typeof e.n === 'number' ? `Day ${e.n} · ${e.dow}, Dec ${e.d}` : `Bonus Idea ${e.n}`);
+const page = (html, { cls = '', landscape = false } = {}) => ({ html, cls, landscape });
+
+function sectionPages(e) {
+  const out = [];
+  for (const p of e.printables) {
+    const frame = p.frame !== false;
+    out.push(page(`${frame ? '<div class="frame">' : ''}<div class="ptag">${label(e)} · ${e.title}</div>${p.html}${frame ? '</div>' : ''}`, { cls: 'printable', landscape: !!p.landscape }));
+  }
+  e.props.forEach((p, i) => {
+    out.push(page(`<div class="phead"><div class="pdate">${typeof e.n === 'number' ? `<small>DAY</small><b>${e.n}</b><span>${e.dow} · Dec ${e.d}</span>` : `<small>BONUS</small><b>${e.n}</b>`}</div><div class="ph-mid"><div class="ph-t">${e.title}</div><div class="ph-s">Laminate &amp; reuse props${e.props.length > 1 ? ` · ${i + 1} of ${e.props.length}` : ''}</div></div>${elf({ w: 40 })}</div>
+      <div class="pnote">${p.note}</div><div class="parea">${special[p.html] || p.html}</div><div class="pfoot">Print on cardstock · laminate · cut on dashed lines</div>`, { cls: 'proppage' }));
+  });
+  return out;
+}
+
+const FRONT = 6; // cover, calendar, guide x3, how-to
+const sections = [...days, ...bonus].map((e) => ({ e, pages: sectionPages(e) }));
+let pn = FRONT + 1;
+for (const s of sections) { s.e.start = pn; pn += s.pages.length; s.e.end = pn - 1; }
+const total = pn - 1;
+const pgs = (e) => (e.start === e.end ? `p. ${e.start}` : `pp. ${e.start}–${e.end}`);
+
+// cover
+const cover = page(`
+<div class="cover">
+  <div class="flakes">${Array.from({ length: 14 }, (_, i) => `<span style="left:${(i * 53) % 95}%;top:${(i * 37) % 88}%">${snowflake(18 + (i % 3) * 10, '#ffffff')}</span>`).join('')}</div>
+  <div class="cover-top">
+    <div class="kicker">December 2026 · Grades K–2</div>
+    <h1>Classroom Elf<br/>Calendar</h1>
+    <div class="sub">16 funny, low-prep Elf on the Shelf ideas for every school day<br/>(Tue, Dec 1 – Tue, Dec 22) + 6 bonus ideas,<br/>with printables and laminate &amp; reuse props</div>
   </div>
-</div>`));
-
-// P18 Certificate (landscape)
-pages.push(printable(18, `
-<div class="cert">
-  <div class="cert-inner">
-    <div class="cert-elf left">${elf({ w: 110 })}</div><div class="cert-elf right">${elf({ w: 110 })}</div>
-    <div class="cert-k">Official</div>
-    <div class="cert-t">Nice List Certificate</div>
-    <div class="cert-s">This certifies that</div>
-    <div class="cert-name"></div>
-    <div class="cert-s">was spotted being <b>kind</b>, <b>helpful</b>, and full of <b>holiday cheer</b><br/>by our Classroom Elf and is officially on the <span class="red">Nice List!</span></div>
-    <div class="cert-sigs"><div><div class="sigline hand">Santa Claus</div>North Pole</div><div><div class="sigline pre">December 22, 2026</div>Date</div><div><div class="sigline"></div>Teacher</div></div>
+  <div class="cover-elf">${elf({ w: 195 })}</div>
+  <div class="cover-box">
+    <h3>What's inside</h3>
+    <ul>
+      <li><b>Page 2:</b> The calendar: what the elf does and the idea for every school day</li>
+      <li><b>Pages 3–5:</b> Teacher guide for all 16 days + 6 bonus ideas</li>
+      <li><b>Page 6:</b> How to laminate the props, and a list of every day's props</li>
+      <li><b>Pages 7–${total}:</b> One section per day: printables, then props to laminate</li>
+    </ul>
+    <h3>Quick tips</h3>
+    <ul>
+      <li>Most days take under 5 minutes to set up, with little or no clean-up.</li>
+      <li>Print the props once on cardstock and laminate them to reuse every year.</li>
+      <li>Did someone touch the elf? Sprinkle a little cinnamon "magic" nearby and the elf is good as new!</li>
+      <li>Not every family celebrates. Keep it light and playful, and welcome everyone to join the fun.</li>
+    </ul>
   </div>
-</div>`, { landscape: true, frame: false }));
+  <div class="disclaimer">Not affiliated with or endorsed by The Elf on the Shelf®. For classroom use.</div>
+</div>`, { cls: 'cover-page' });
 
-// Laminate & reuse props
-const propsOut = require('./props.js')({ elf, snowflake, page, days, dayByNum, propPg, C: { RED, GREEN, GOLD, INK } });
-pages.push(...propsOut.pages);
-if (pages.length !== propPg(22) + 1) throw new Error(`Prop page numbers are off: ${pages.length} pages`);
+// calendar
+const byDate = Object.fromEntries(days.map((e) => [e.d, e]));
+function calCell(d) {
+  const e = byDate[d];
+  return `<div class="cell"><div class="cell-head"><span class="dayp">DAY ${e.n}</span><span class="num">${d}</span></div><div class="ctitle">${e.title}</div>
+    <div class="ctext"><b>Elf:</b> ${e.elfDoes}</div><div class="ctext"><b>Idea:</b> ${e.idea}</div><div class="ctags"><span class="cprint">${pgs(e)}</span></div></div>`;
+}
+const calendar = page(`
+<div class="cal">
+  <div class="cal-header"><div><div class="cal-title">December 2026</div><div class="cal-sub">Classroom Elf Calendar · Monday–Friday · 16 school days</div></div>${elf({ w: 52 })}</div>
+  <div class="grid">
+    ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((d) => `<div class="dow">${d}</div>`).join('')}
+    <div class="cell off"><span class="num dim">30</span><div class="offtxt">Nov 30<br/>Get ready! The elf arrives tomorrow.</div></div>
+    ${[1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 21, 22].map(calCell).join('')}
+    <div class="cell bonuscell" style="grid-column: span 3"><div class="bc-t">${star(22)} 6 Bonus Ideas: swap one in any day! ${star(22)}</div>
+      <div class="bc-list">${bonus.map((b) => `<div><b>${b.n}. ${b.title}:</b> ${b.idea} <span class="cprint">${pgs(b)}</span></div>`).join('')}</div>
+      <div class="bc-f">Dec 23–25: Winter Break! The elf is back at the North Pole.</div></div>
+  </div>
+</div>`, { landscape: true });
 
-// ---------- styles ----------
-const css = `
-@font-face { font-family: 'Fredoka'; src: url('fonts/Fredoka.ttf'); font-weight: 300 700; }
-@font-face { font-family: 'Patrick Hand'; src: url('fonts/PatrickHand-Regular.ttf'); }
-@page { size: 8.5in 11in; margin: 0; }
-@page land { size: 11in 8.5in; margin: 0; }
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body { font-family: 'Fredoka', sans-serif; color: ${INK}; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.page { width: 8.5in; height: 11in; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
-.page.land { page: land; width: 11in; height: 8.5in; }
-.hand { font-family: 'Patrick Hand', cursive; }
-.red { color: ${RED}; }
-b { font-weight: 600; }
+// guide
+function guideBlock(e) {
+  const num = typeof e.n === 'number';
+  return `<div class="gblock">
+    <div class="gdate"><div class="gdow">${num ? 'DAY' : 'BONUS'}</div><div class="gnum">${e.n}</div><div class="gmon">${num ? `${e.dow} ${e.d}` : 'any day'}</div></div>
+    <div class="gbody">
+      <div class="gtitle">${e.title} <span class="gp">${pgs(e)}</span></div>
+      <div><b class="lab">Set the scene:</b> ${e.scene}</div>
+      <div><b class="lab">Morning fun:</b> ${e.fun}</div>
+      <div><b class="lab">You'll need:</b> ${e.need}</div>
+    </div></div>`;
+}
+const guide = [
+  page(`<div class="guide"><h2>Teacher Guide <span>Days 1–8</span></h2>${days.slice(0, 8).map(guideBlock).join('')}</div>`),
+  page(`<div class="guide"><h2>Teacher Guide <span>Days 9–16</span></h2>${days.slice(8).map(guideBlock).join('')}</div>`),
+  page(`<div class="guide"><h2>Teacher Guide <span>Bonus ideas: swap in any day</span></h2>${bonus.map(guideBlock).join('')}</div>`),
+];
 
-/* cover */
-.cover-page { background: linear-gradient(170deg, ${RED} 0 46%, #fffaf0 46%); }
-.cover { position: absolute; inset: 0; }
-.flakes span { position: absolute; opacity: .55; }
-.flakes { position: absolute; left: 0; right: 0; top: 0; height: 46%; }
-.cover-top { position: relative; text-align: center; color: #fff; padding-top: .75in; }
-.kicker { display: inline-block; background: ${GREEN}; padding: 6px 18px; border-radius: 20px; font-weight: 600; letter-spacing: 1px; font-size: 14pt; }
-.cover h1 { font-size: 64pt; line-height: .98; margin: 18px 0 14px; font-weight: 700; text-shadow: 0 4px 0 rgba(0,0,0,.18); }
-.sub { font-size: 14pt; line-height: 1.4; }
-.cover-elf { position: absolute; left: 50%; transform: translateX(-50%); top: 4.22in; }
-.cover-box { position: absolute; left: .8in; right: .8in; top: 7.15in; background: #fff; border: 3px dashed ${GREEN}; border-radius: 18px; padding: 10px 24px 6px; font-size: 10.5pt; }
-.cover-box h3 { margin: 6px 0 2px; color: ${RED}; font-size: 13pt; }
-.cover-box ul { margin: 0 0 6px; padding-left: 18px; line-height: 1.35; }
-.disclaimer { position: absolute; bottom: .25in; width: 100%; text-align: center; font-size: 8pt; color: #888; }
+// how-to + props list
+const howto = page(`<div class="pintro">
+  <div class="pi-head">${elf({ w: 80 })}<div><h2>Laminate &amp; Reuse Props</h2><div class="pi-s">Every day has sturdy props for the elf. Make them once and use them every year!</div></div></div>
+  <div class="pi-cols">
+    <div class="pi-box"><h3>How to make them</h3><ol>
+      <li>Print the props pages on <b>white cardstock</b>.</li>
+      <li>Rough-cut each piece, then <b>laminate</b>.</li>
+      <li>Cut on the dashed lines, leaving a small clear border.</li>
+      <li>Add craft sticks, sticky tack, or Velcro dots so the elf can "hold" them.</li>
+    </ol></div>
+    <div class="pi-box"><h3>Teacher tips</h3><ul>
+      <li><b>Dry-erase</b> areas wipe clean, so you can reuse names, scores, and messages.</li>
+      <li>For see-through windows (magnifying glass, photo frame), <b>cut the window out before laminating</b>.</li>
+      <li>Store each day's props in a labeled zip bag.</li>
+    </ul></div>
+  </div>
+  <table class="pi-table"><colgroup><col style="width:9%"><col style="width:25%"><col style="width:53%"><col style="width:13%"></colgroup><tr><th>Day</th><th>Idea</th><th>Props to laminate</th><th>Pages</th></tr>
+    ${[...days, ...bonus].map((e) => `<tr class="${typeof e.n === 'number' ? '' : 'bonusrow'}"><td>${typeof e.n === 'number' ? `Day ${e.n}` : `Bonus ${e.n}`}</td><td>${e.title}</td><td>${e.propList}</td><td>${e.start === e.end ? e.start : `${e.start}–${e.end}`}</td></tr>`).join('')}
+  </table></div>`, { cls: 'proppage' });
 
-/* calendar */
-.cal { position: absolute; inset: .35in; display: flex; flex-direction: column; }
-.cal-header { display: flex; justify-content: space-between; align-items: center; background: ${RED}; color: #fff; border-radius: 14px 14px 0 0; padding: 4px 22px; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 14px, transparent 14px 28px); }
-.cal-title { font-size: 34pt; font-weight: 700; line-height: 1; }
-.cal-sub { font-size: 12pt; opacity: .95; }
-.grid { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 26px repeat(4, 1fr); border: 3px solid ${RED}; border-top: none; border-radius: 0 0 14px 14px; overflow: hidden; }
-.dow { background: ${GREEN}; color: #fff; text-align: center; font-weight: 600; font-size: 11pt; line-height: 26px; }
-.cell { border-right: 1.5px solid #e5c9cd; border-bottom: 1.5px solid #e5c9cd; padding: 5px 7px; display: flex; flex-direction: column; background: #fff; }
-.cell:nth-child(5n+5) { border-right: none; }
-.cell-head { display: flex; align-items: center; gap: 6px; }
-.num { flex: none; width: 26px; height: 26px; border-radius: 50%; background: ${RED}; color: #fff; font-weight: 700; font-size: 12pt; display: flex; align-items: center; justify-content: center; }
-.num.dim { background: #cfcfcf; }
-.ctitle { font-weight: 600; color: ${GREEN}; font-size: 11.5pt; line-height: 1.05; }
-.ctext { font-size: 10pt; line-height: 1.28; margin-top: 4px; flex: 1; }
-.cprint { align-self: flex-start; font-size: 8pt; font-weight: 600; background: #fdecc8; color: #8a5a00; padding: 1px 7px; border-radius: 8px; }
-.ctags { display: flex; gap: 4px; flex-wrap: wrap; }
-.cprop { font-size: 8pt; font-weight: 600; background: #dff0e6; color: ${GREEN}; padding: 1px 7px; border-radius: 8px; }
-.gp.prop { background: #dff0e6; color: ${GREEN}; }
-.cell.off { background: #f6f6f6; }
-.offtxt { font-size: 9pt; color: #777; margin-top: 8px; }
-.cell.break { background: #eef5fc; border-right: none; }
-.breaktxt { margin: auto; display: flex; align-items: center; gap: 16px; text-align: center; font-size: 11pt; color: #3b6b97; }
+const allPages = [cover, calendar, ...guide, howto, ...sections.flatMap((s) => s.pages)];
+if (allPages.length !== total) throw new Error(`page count mismatch ${allPages.length} vs ${total}`);
 
-/* guide */
-.guide { padding: .45in .5in; }
-.guide h2 { margin: 0 0 10px; font-size: 24pt; color: ${RED}; border-bottom: 3px solid ${GREEN}; }
-.guide h2 span { font-size: 12pt; color: ${GREEN}; font-weight: 500; margin-left: 8px; }
-.gblock { display: flex; gap: 12px; padding: 7px 0; border-bottom: 1.5px dashed #e3c3c7; font-size: 10.2pt; line-height: 1.32; }
-.gdate { flex: none; width: 54px; height: 66px; border-radius: 10px; background: ${RED}; color: #fff; text-align: center; padding-top: 3px; }
-.gdow { font-size: 8.5pt; font-weight: 600; }
-.gnum { font-size: 22pt; font-weight: 700; line-height: 1; }
-.gmon { font-size: 8pt; }
-.gtitle { font-size: 12.5pt; font-weight: 700; color: ${GREEN}; margin-bottom: 1px; }
-.gp { font-size: 8pt; font-weight: 600; background: #fdecc8; color: #8a5a00; padding: 1px 8px; border-radius: 8px; margin-left: 6px; vertical-align: 2px; }
-.lab { color: ${RED}; }
-
-/* printables shared */
-.printable .frame { position: absolute; inset: .3in; border: 14px solid; border-image: repeating-linear-gradient(45deg, ${RED} 0 12px, #fff 12px 24px, ${GREEN} 24px 36px, #fff 36px 48px) 14; padding: .3in .4in; display: flex; flex-direction: column; }
-.ptag { position: absolute; top: .06in; right: .45in; font-size: 8pt; color: #999; }
-.printable .frame .ptag { top: 2px; right: 8px; }
-.ptitle { font-size: 30pt; font-weight: 700; color: ${RED}; margin: 0 0 4px; text-align: center; line-height: 1.05; }
-.ptitle.huge { font-size: 54pt; }
-.psub { text-align: center; font-size: 12pt; color: #555; margin-bottom: 14px; }
-.cut { border: 2px dashed #9a9a9a; border-radius: 10px; }
-.hw { height: .62in; border-top: 1.5px solid #666; border-bottom: 1.5px solid #666; margin: 6px 0 12px; background: repeating-linear-gradient(to right, #b8b8b8 0 7px, transparent 7px 14px) center / 100% 1.5px no-repeat; }
-.drawbox { border: 3px solid ${GREEN}; border-radius: 14px; flex: 1; margin: 6px 0 14px; position: relative; background: #fff; }
-.drawbox.short { flex: none; height: 3.1in; }
-.drawbox.short2 { flex: none; height: 2.4in; }
-.wrow, .q, .srow { font-size: 15pt; font-weight: 500; margin-top: 6px; }
-.byline { font-size: 14pt; margin-top: auto; }
-.byline.center { text-align: center; }
-
-/* letters */
-.letter-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px; }
-.letter .hand { font-size: 19pt; line-height: 1.35; }
-.letter .hand p { margin: 0 0 11px; }
-.sign { text-align: right; }
-.sign .big { font-size: 24pt; color: ${GREEN}; }
-
-/* ballots */
-.ballots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; }
-.ballot { display: flex; gap: 10px; align-items: center; padding: 10px 12px; }
-.ballot > div { flex: 1; }
-.btitle { font-weight: 700; color: ${GREEN}; font-size: 13pt; }
-.bq { font-size: 11pt; }
-.ballot .hw { margin: 4px 0 6px; height: .5in; }
-.bname { font-size: 10pt; color: #555; }
-
-/* meet */
-.meet { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.meet-elf { margin: 8px 0 14px; }
-.meet-lines { width: 100%; }
-.mrow { display: flex; align-items: flex-end; gap: 12px; font-size: 20pt; font-weight: 600; margin: 14px 0; }
-.mrow span { white-space: nowrap; color: ${GREEN}; }
-.mline { flex: 1; border-bottom: 3px solid ${INK}; height: .6in; font-family: 'Patrick Hand'; font-size: 24pt; font-weight: 400; text-align: center; }
-.mline.pre { height: auto; }
-
-/* snowballs */
-.sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; }
-.sbox { border: 3px solid #9cc3e6; border-radius: 14px; padding: 6px 10px; display: flex; flex-direction: column; justify-content: space-between; background: #f6fbff; }
-.sans { font-size: 14pt; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.nbox { display: inline-block; width: .6in; height: .5in; border: 2.5px solid ${INK}; border-radius: 8px; background: #fff; }
-.bonus { display: flex; align-items: center; gap: 12px; font-size: 14pt; margin-top: 12px; }
-
-/* zip */
-.zip { overflow: hidden; }
-.zipline { position: absolute; left: 0; top: 0; width: 100%; height: 1.4in; }
-.zipelf { position: absolute; left: 12px; top: 6px; transform: rotate(-8deg); }
-
-/* report */
-.report-head { display: flex; align-items: center; justify-content: center; gap: 14px; }
-.stamp { border: 3px solid ${RED}; color: ${RED}; font-weight: 700; padding: 2px 10px; transform: rotate(-8deg); border-radius: 6px; letter-spacing: 2px; }
-.fields { display: flex; justify-content: space-between; font-size: 13pt; margin: 8px 0; }
-.circleopts { font-size: 11pt; color: #777; }
-.opts { display: flex; justify-content: space-around; font-size: 22pt; font-weight: 600; color: ${GREEN}; margin: 8px 0 10px; }
-.footelf { display: flex; align-items: center; gap: 10px; font-size: 13pt; margin-top: auto; color: ${GREEN}; font-weight: 600; }
-
-/* license */
-.license { margin: 10px auto 18px; width: 6.4in; padding: 0; overflow: hidden; border-radius: 16px; border-color: ${GREEN}; border-style: dashed; border-width: 3px; }
-.lic-top { background: ${GREEN}; color: #fff; text-align: center; font-weight: 700; font-size: 16pt; padding: 6px; }
-.lic-top span { background: ${GOLD}; color: ${INK}; border-radius: 6px; padding: 0 8px; font-size: 11pt; margin-right: 6px; vertical-align: 3px; }
-.lic-body { display: flex; gap: 16px; padding: 14px 18px; }
-.photo { flex: none; width: 1.6in; height: 1.9in; border: 2.5px solid ${INK}; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-align: center; color: #aaa; font-size: 11pt; }
-.lic-fields { display: flex; flex-direction: column; justify-content: space-around; font-size: 13pt; }
-.fishrow svg { vertical-align: middle; margin-left: 3px; }
-.lic-foot { border-top: 2px dashed #ccc; padding: 4px 18px; font-size: 11pt; display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
-.lic-foot .hand { font-size: 16pt; color: ${RED}; }
-
-/* coloring */
-.outline-title { color: #fff; -webkit-text-stroke: 2px ${INK}; font-size: 44pt; }
-.color-scene { position: relative; flex: 1; }
-.presents { position: absolute; bottom: 0; left: -10px; width: calc(100% + 20px); }
-.color-elf { position: absolute; left: 50%; transform: translateX(-50%); bottom: 10px; }
-.cflakes span { position: absolute; }
-
-/* clues */
-.clues { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; }
-.clue { padding: 10px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fffaf0; position: relative; }
-.cnum { width: 44px; height: 44px; border-radius: 50%; background: ${RED}; color: #fff; font-weight: 700; font-size: 20pt; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.clue:last-child .cnum { background: ${GREEN}; height: 56px; width: 56px; }
-.cl-t { font-weight: 700; font-size: 15pt; color: ${GREEN}; margin: 4px 0; }
-.cl-c { font-size: 17pt; line-height: 1.25; }
-.cl-w { font-size: 8pt; color: #999; margin-top: 8px; }
-
-/* roll */
-.rolltable { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
-.rrow { display: flex; align-items: center; gap: 10px; border-bottom: 1.5px dashed #ddd; padding: 2px 0; }
-.rpart { width: 70px; display: flex; justify-content: center; }
-.rname { font-size: 12.5pt; font-weight: 500; }
-.buildbox { flex: 1; border: 3px solid #9cc3e6; border-radius: 14px; margin: 12px 0; position: relative; background: #f6fbff; }
-.buildbox span { position: absolute; top: 8px; width: 100%; text-align: center; color: #8aa9c6; font-size: 13pt; }
-.ground { position: absolute; bottom: 0; left: 0; right: 0; height: .5in; background: #fff; border-top: 3px solid #9cc3e6; border-radius: 0 0 11px 11px; }
-
-/* tickets */
-.tickets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; }
-.ticket { display: flex; align-items: center; padding: 0; overflow: hidden; background: #fffaf0; }
-.t-stub { flex: none; width: .65in; align-self: stretch; background: ${RED}; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 10pt; border-right: 2px dashed #fff; }
-.t-main { flex: 1; padding: 4px 8px; }
-.t-brand { font-weight: 700; color: ${GREEN}; font-size: 15pt; letter-spacing: 1px; }
-.t-show { font-size: 9.5pt; }
-.t-row { display: flex; justify-content: space-between; font-size: 9pt; color: #555; margin-top: 4px; }
-.ticket .elf { margin-right: 8px; }
-
-/* bookmarks */
-.bookmarks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex: 1; }
-.bm { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 14px 6px; text-align: center; }
-.bm-t { font-weight: 700; font-size: 15pt; color: ${GREEN}; line-height: 1.15; }
-.bm-flakes { display: flex; gap: 10px; align-items: center; }
-.bm-name { font-size: 11pt; }
-
-/* santa */
-.santa { flex: 1; display: flex; flex-direction: column; }
-.santa .srow.hand { font-size: 24pt; color: ${GREEN}; }
-.santa .hw { margin-bottom: 4px; }
-
-/* minis */
-.minis { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 8px; flex: 1; }
-.mini { display: flex; align-items: center; justify-content: center; }
-.mini.sign { background: #fdecc8; text-align: center; font-size: 12pt; padding: 6px; border-color: ${GOLD}; }
-
-/* invites */
-.invites { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; flex: 1; }
-.invite { text-align: center; padding: 14px 12px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #f2f9f4; border-color: ${GREEN}; }
-.inv-t { font-size: 13pt; color: ${GREEN}; font-weight: 600; }
-.inv-big { font-size: 34pt; font-weight: 700; color: ${RED}; line-height: 1; }
-.inv-date { font-weight: 600; font-size: 12pt; }
-.inv-txt { font-size: 11pt; line-height: 1.3; }
-.inv-from { font-size: 11pt; }
-.inv-from .hand { font-size: 15pt; color: ${GREEN}; }
-
-/* props */
-.props { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 12px; flex: 1; }
-.prop { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.prop-n { font-size: 10pt; color: #888; }
-
-/* certificate */
-.cert { position: absolute; inset: .35in; border: 10px solid ${GREEN}; border-radius: 10px; padding: 8px; background: #fffaf0; }
-.cert-inner { position: relative; height: 100%; border: 3px solid ${GOLD}; border-radius: 6px; text-align: center; padding-top: .45in; }
-.cert-elf { position: absolute; bottom: .3in; }
-.cert-elf.left { left: .3in; } .cert-elf.right { right: .3in; transform: scaleX(-1); }
-.cert-k { font-size: 18pt; letter-spacing: 6px; color: ${GREEN}; font-weight: 600; text-transform: uppercase; }
-.cert-t { font-size: 46pt; font-weight: 700; color: ${RED}; line-height: 1.1; margin-bottom: 14px; }
-.cert-s { font-size: 16pt; line-height: 1.45; }
-.cert-name { width: 6in; margin: 14px auto 16px; border-bottom: 3px solid ${INK}; height: .6in; }
-.cert-sigs { display: flex; justify-content: center; gap: .5in; margin-top: .45in; font-size: 11pt; color: #666; }
-.sigline { width: 1.9in; border-bottom: 2px solid ${INK}; height: .45in; font-size: 18pt; color: ${GREEN}; display: flex; align-items: flex-end; justify-content: center; }
-.sigline.pre { font-family: 'Fredoka'; font-size: 12pt; color: ${INK}; }
+// ---------------------------------------------------------------------------
+// Extra styles for v2
+// ---------------------------------------------------------------------------
+const v2Css = `
+.cell-head { justify-content: space-between; }
+.dayp { background: ${GREEN}; color: #fff; font-weight: 700; font-size: 9pt; padding: 1px 8px; border-radius: 9px; letter-spacing: .5px; }
+.cal .ctitle { font-size: 11pt; margin-top: 3px; line-height: 1.1; }
+.cal .ctext { font-size: 8.6pt; line-height: 1.22; margin-top: 2px; flex: none; }
+.cal .ctext b { color: ${RED}; }
+.cal .ctags { margin-top: auto; }
+.bonuscell { background: #fffaf0; border-right: none; padding: 6px 12px; }
+.bc-t { font-weight: 700; color: ${RED}; font-size: 11.5pt; display: flex; align-items: center; gap: 6px; }
+.bc-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; font-size: 8.6pt; margin-top: 4px; line-height: 1.25; }
+.bc-list b { color: ${GREEN}; }
+.bc-list .cprint { font-size: 7pt; padding: 0 5px; white-space: nowrap; }
+.bc-f { margin-top: auto; font-size: 8.5pt; color: #3b6b97; text-align: center; }
+.gdate { height: 70px; } .gdow { font-size: 7.5pt; } .gmon { font-size: 7.5pt; }
+.divpage { padding: .5in; display: flex; align-items: center; background: linear-gradient(170deg, #fff 0 70%, #fdf1f2 70%); }
+.divider { display: flex; gap: .35in; align-items: flex-start; border: 4px solid ${RED}; border-radius: 24px; padding: .4in; background: #fff; box-shadow: 0 0 0 10px #fdecc8; width: 100%; }
+.dv-badge { flex: none; width: 1.35in; height: 1.6in; border-radius: 18px; background: ${RED}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.dv-badge small { font-size: 13pt; letter-spacing: 2px; font-weight: 600; } .dv-badge b { font-size: 54pt; } .dv-badge span { font-size: 11pt; margin-top: 4px; }
+.dv-main { flex: 1; }
+.dv-t { font-size: 28pt; font-weight: 700; color: ${GREEN}; line-height: 1.05; margin-bottom: 12px; }
+.dv-row { font-size: 13pt; line-height: 1.4; margin-bottom: 7px; }
+.dv-l { font-weight: 700; color: ${RED}; }
+.dv-list { margin-top: 14px; font-size: 10.5pt; background: #fdecc8; color: #6b4a00; padding: 6px 12px; border-radius: 10px; }
+.pdate { width: 74px; height: 74px; } .pdate small { font-size: 7.5pt; letter-spacing: 1px; } .pdate b { font-size: 24pt; } .pdate span { font-size: 7pt; }
+.l2 { font-size: 16.5pt !important; line-height: 1.32 !important; }
+.l2 p { margin: 0 0 8px !important; } .l2 ol { margin: 0 0 8px; padding-left: 34px; } .l2 li { margin-bottom: 2px; }
+.ps { background: #fdecc8; border-radius: 12px; padding: 6px 12px; }
+.doors { display: flex; gap: .45in; justify-content: center; align-items: flex-end; width: 100%; }
+.door-n { text-align: center; font-size: 11pt; color: #888; margin-top: 12px; }
+.knock { background: #fff8e7; border: .07in solid ${RED}; border-radius: .15in; padding: .12in .25in; text-align: center; font-size: 14pt; color: ${INK}; display: flex; flex-direction: column; align-items: center; }
+.knock b { color: ${RED}; font-size: 16pt; } .knock.g { border-color: ${GREEN}; } .knock.g b { color: ${GREEN}; }
+.mm-board { background: #2f4f3a; color: #fff; border: 10px solid #8b5a2b; border-radius: 10px; font-size: 22pt; line-height: 1.35; padding: 14px 20px; margin: 4px 0 14px; }
+.fixgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .35in; }
+.fixrow { display: flex; align-items: center; gap: 10px; } .fixrow .hw { flex: 1; margin: 6px 0; }
+.bad { font-family: 'Patrick Hand'; font-size: 20pt; color: ${RED}; text-decoration: underline wavy; min-width: 1.1in; }
+.arrow { font-size: 18pt; color: #888; }
+.mmprop { width: 7.2in; background: #2f4f3a; border: .12in solid #8b5a2b; border-radius: .12in; padding: .12in; text-align: center; }
+.mm-t { color: #fff; font-weight: 700; font-size: 20pt; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
+.keycard { width: 7.2in; border: 3px dashed ${GOLD}; border-radius: .15in; padding: .12in .2in; background: #fffaf0; }
+.kc-t { font-weight: 700; color: ${RED}; font-size: 14pt; } .kc-msg { font-size: 18pt; line-height: 1.3; margin: 6px 0; } .kc-k { font-size: 10pt; color: #555; }
+.badges { display: grid; grid-template-columns: repeat(4, 1fr); gap: .22in; }
+.badge { width: 1.55in; height: 1.55in; border-radius: 50%; background: ${GOLD}; display: flex; align-items: center; justify-content: center; border: 3px solid ${INK}; }
+.b-in { width: 1.25in; height: 1.25in; border-radius: 50%; background: #fff; border: 2px dashed ${RED}; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.b-in b { color: ${RED}; font-size: 13pt; } .b-in span { color: ${GREEN}; font-size: 11pt; font-weight: 700; }
+.rc { width: 100%; border-collapse: collapse; margin: 4px 0 14px; }
+.rc th { background: ${GREEN}; color: #fff; text-align: left; padding: 6px 12px; font-size: 14pt; }
+.rc td { border-bottom: 2px dashed #ddd; padding: 4px 12px; font-size: 16pt; font-weight: 500; }
+.stars { white-space: nowrap; } .stars svg { margin-right: 6px; }
+.trc { width: 6.6in; background: #fffaf0; border: .1in solid ${GREEN}; border-radius: .18in; padding: .15in .25in; }
+.trc-h { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid ${RED}; padding-bottom: 4px; }
+.trc-k { font-size: 11pt; letter-spacing: 3px; color: ${GREEN}; font-weight: 600; text-transform: uppercase; } .trc-t { font-size: 30pt; font-weight: 700; color: ${RED}; line-height: 1; }
+.trc-s { font-size: 13pt; margin: 8px 0; display: flex; align-items: center; gap: 10px; }
+.trc table { width: 100%; border-collapse: collapse; }
+.trc td { border-bottom: 1.5px solid #e5d5b5; padding: 4px 6px; font-size: 13pt; vertical-align: middle; }
+.trc td.hand { font-size: 18pt; color: ${RED}; text-align: right; line-height: 1.05; } .trc td small { font-size: 12pt; color: #777; }
+.trc-c { margin-top: 8px; font-size: 12pt; } .trc-c .hand { font-size: 17pt; color: ${GREEN}; }
+.trc-sig { text-align: right; font-size: 11pt; } .trc-sig .hand { font-size: 20pt; color: ${RED}; }
+.pwcols { display: flex; align-items: center; justify-content: center; gap: .3in; margin: 6px 0 10px; }
+.pwcol { width: 2.6in; border: 3px solid ${RED}; border-radius: 14px; padding: 6px 14px; text-align: center; }
+.pwcol.g { border-color: ${GREEN}; }
+.pwcol h3 { margin: 0 0 4px; color: ${RED}; } .pwcol.g h3 { color: ${GREEN}; }
+.pwcol div { font-size: 17pt; padding: 3px 0; border-bottom: 1.5px dashed #ddd; }
+.pwplus { font-size: 40pt; font-weight: 700; color: ${GOLD}; }
+.pwsign { width: 7in; background: ${GREEN}; color: #fff; border-radius: .18in; padding: .2in; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; border: .09in solid #fff; box-shadow: 0 0 0 3px ${GREEN}; }
+.pw-k { font-size: 16pt; } .pw-t { font-size: 40pt; font-weight: 700; line-height: 1; color: ${GOLD}; } .pw-s { font-size: 16pt; margin-bottom: 6px; }
+.pwcards { display: grid; grid-template-columns: 1fr 1fr; gap: .22in .3in; }
+.pwc { width: 3.4in; height: 1.35in; border-radius: .12in; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid ${INK}; }
+.pwc small { font-size: 10pt; opacity: .9; } .pwc b { font-size: 22pt; }
+.est { display: flex; justify-content: center; gap: .6in; margin: 10px 0; text-align: center; }
+.est-l { font-size: 16pt; font-weight: 600; color: ${GREEN}; } .est-b { width: 2in; height: 1.1in; border: 3px solid ${INK}; border-radius: 12px; margin-top: 6px; background: #fff; }
+.mazewrap { flex: 1; display: flex; align-items: center; gap: 6px; }
+.mz { flex: 1; }
+.mz-start, .mz-end { display: flex; flex-direction: column; align-items: center; font-weight: 700; color: ${GREEN}; }
+.mz-start { align-self: flex-start; } .mz-end { align-self: flex-end; }
+.bulbs { display: grid; grid-template-columns: repeat(8, 1fr); gap: .14in; }
+.pq { font-size: 14pt; margin: 8px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pq .opts { width: 100%; margin: 4px 0 0; }
+.opts.small { font-size: 13pt; } .opts.small span { border: 2px solid ${GREEN}; border-radius: 20px; padding: 2px 12px; }
+.bells svg { margin-right: 3px; vertical-align: middle; }
+.big2 { font-size: 18pt; color: ${RED}; }
+.tent { width: 6.4in; border: 3px solid ${INK}; border-radius: .08in; overflow: hidden; }
+.tent-top, .tent-bot { height: 1.3in; display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 36pt; font-weight: 700; color: #fff; background: ${RED}; }
+.tent-top { transform: rotate(180deg); background: ${GREEN}; }
+.tent-fold { border-top: 2px dashed #999; text-align: center; font-size: 8pt; color: #999; background: #fff; }
+.quizcard { width: 4.6in; background: #fff; border: .09in solid ${GOLD}; border-radius: .18in; padding: .15in; text-align: center; }
+.qc-t { font-size: 30pt; font-weight: 700; color: ${RED}; } .qc-s { font-family: 'Patrick Hand'; font-size: 18pt; color: ${GREEN}; text-align: right; }
+.ttts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .2in; flex: 1; align-content: center; }
+.ttt { border: 2px dashed #bbb; border-radius: 12px; padding: 6px; text-align: center; }
+.ttt-l { font-weight: 600; color: ${RED}; } .ttt-w { font-size: 10.5pt; color: #555; }
+.tttboard { width: 6.6in; background: #fff; border: .1in solid ${GREEN}; border-radius: .2in; padding: .15in .3in; text-align: center; }
+.tb-t { font-size: 26pt; font-weight: 700; color: ${GREEN}; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
+.pieces { display: grid; grid-template-columns: repeat(5, 1fr); gap: .2in .25in; }
+.stickies { display: grid; grid-template-columns: repeat(4, 1fr); gap: .2in; }
+.sticky { width: 1.65in; height: 1.65in; padding: 8px; font-size: 13pt; line-height: 1.12; display: flex; align-items: center; justify-content: center; text-align: center; box-shadow: 0 3px 0 rgba(0,0,0,.12); border: 1px solid rgba(0,0,0,.15); }
+.moves { display: grid; grid-template-columns: 1fr 1fr; gap: .25in .3in; }
+.move { width: 3.4in; height: 2.6in; border: .09in solid; border-radius: .18in; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: .1in; position: relative; }
+.mv-n { position: absolute; top: 6px; left: 12px; font-weight: 700; font-size: 18pt; color: #bbb; }
+.mv-t { font-size: 24pt; font-weight: 700; color: ${RED}; line-height: 1.05; } .mv-s { font-size: 12pt; margin: 4px 0; }
+.pi-table { font-size: 9.2pt !important; } .pi-table td { padding: 3px 7px !important; }
 `;
 
-const allCss = css + propsOut.css;
-const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Classroom Elf Calendar · December 2026</title><style>${allCss}</style></head><body>${pages.join('\n')}</body></html>`;
+const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Classroom Elf Calendar · December 2026</title><style>${baseCss}${K.propCss}${v2Css}</style></head><body>${allPages.map((p) => `<section class="page ${p.landscape ? 'land' : ''} ${p.cls}">${p.html}</section>`).join('\n')}</body></html>`;
 fs.writeFileSync(HTML_FILE, html);
 
 (async () => {
@@ -639,5 +548,5 @@ fs.writeFileSync(HTML_FILE, html);
   await pg.evaluate(() => document.fonts.ready);
   await pg.pdf({ path: PDF_FILE, preferCSSPageSize: true, printBackground: true });
   await browser.close();
-  console.log(`Wrote ${PDF_FILE} (${pageNo} pages)`);
+  console.log(`Wrote ${PDF_FILE} (${total} pages)`);
 })();
