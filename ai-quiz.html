@@ -1,0 +1,438 @@
+<title>Turing Trivia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one centered instrument panel; header readouts on top, question card, answer grid, feedback strip. */
+:root {
+  --bg: #e9edf3;
+  --surface: #ffffff;
+  --surface-2: #f3f5f9;
+  --ink: #131a26;
+  --muted: #5b6579;
+  --line: #d3d9e3;
+  --accent: #e8521b;
+  --accent-ink: #ffffff;
+  --good: #198754;
+  --good-bg: #e3f4ea;
+  --bad: #c62f3a;
+  --bad-bg: #fbe6e7;
+  --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f131b; --surface: #171d28; --surface-2: #1e2533; --ink: #e7ebf2; --muted: #96a0b3;
+    --line: #2b3444; --accent: #ff7440; --accent-ink: #1a0d06;
+    --good: #4cc38a; --good-bg: #16301f; --bad: #ff6b74; --bad-bg: #3a1a1e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f131b; --surface: #171d28; --surface-2: #1e2533; --ink: #e7ebf2; --muted: #96a0b3;
+  --line: #2b3444; --accent: #ff7440; --accent-ink: #1a0d06;
+  --good: #4cc38a; --good-bg: #16301f; --bad: #ff6b74; --bad-bg: #3a1a1e;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-size: 28px; letter-spacing: .01em; }
+.brand h1 span { color: var(--accent); }
+
+/* Start screen */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+.diffs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 480px) { .diffs { grid-template-columns: repeat(2, 1fr); } }
+.diff {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+  padding: 12px 10px; text-align: left; display: flex; flex-direction: column; gap: 2px;
+}
+.diff b { font-family: var(--font-display); font-size: 17px; }
+.diff small { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+.diff[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--surface); }
+.primary {
+  background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px;
+  padding: 14px 20px; font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: .02em;
+}
+.primary:hover { filter: brightness(1.06); }
+.stats { display: flex; gap: 24px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; }
+.stat .mono { font-size: 20px; }
+
+/* Game HUD */
+.hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.hud .cell { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.hud .mono { font-size: 20px; display: block; }
+.ctx { display: flex; flex-direction: column; gap: 6px; }
+.ctx-row { display: flex; justify-content: space-between; align-items: baseline; }
+.bar { height: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; }
+.bar.low > i { background: var(--bad); }
+
+.qcard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.qmeta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.chip { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.chip.easy { color: var(--good); border-color: currentColor; }
+.chip.medium { color: var(--accent); border-color: currentColor; }
+.chip.hard { color: var(--bad); border-color: currentColor; }
+.qtext { font-family: var(--font-display); font-size: 23px; font-weight: 500; }
+
+.answers { display: grid; gap: 10px; }
+.ans {
+  display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0;
+  transition: border-color .15s, background .15s;
+}
+.ans:hover:not(:disabled) { border-color: var(--accent); }
+.ans .key { font-family: var(--font-mono); font-size: 13px; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); }
+.ans:disabled { cursor: default; }
+.ans.correct { background: var(--good-bg); border-color: var(--good); }
+.ans.correct .key { background: var(--good); border-color: var(--good); color: var(--surface); }
+.ans.wrong { background: var(--bad-bg); border-color: var(--bad); }
+.ans.wrong .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.ans.dim { opacity: .55; }
+
+.feedback { border-left: 4px solid var(--good); background: var(--surface); border-radius: 0 10px 10px 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.feedback.bad { border-left-color: var(--bad); }
+.feedback h3 { font-size: 18px; }
+.feedback p { margin: 0; color: var(--muted); }
+.next-row { display: flex; justify-content: flex-end; }
+
+/* Results */
+.seq { display: flex; gap: 6px; flex-wrap: wrap; }
+.seq span { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--surface); }
+.seq .y { background: var(--good); }
+.seq .n { background: var(--bad); }
+.rank { font-size: 40px; color: var(--accent); }
+.review { display: flex; flex-direction: column; gap: 12px; }
+.review-item { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.review-item p { margin: 0; }
+.review-item .a { color: var(--good); font-weight: 600; }
+.review-item .x { color: var(--muted); font-size: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.ghost { background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 14px 20px; font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.ghost:hover { border-color: var(--accent); }
+.hint { color: var(--muted); font-size: 13px; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@keyframes pop { from { transform: translateY(6px); opacity: .4; } to { transform: none; opacity: 1; } }
+.enter { animation: pop .25s ease-out; }
+</style>
+
+<div class="wrap">
+  <header class="brand">
+    <h1>Turing<span>/</span>Trivia</h1>
+    <span class="label" id="bestTop">Best: —</span>
+  </header>
+
+  <!-- START -->
+  <section id="start" class="panel">
+    <h2 style="font-size:22px">How well do you know AI?</h2>
+    <p class="lede">Ten random questions on AI history, how language models work, and the jargon in between. You have 15 seconds per question. Faster answers and streaks earn bonus points.</p>
+    <div>
+      <div class="label" style="margin-bottom:8px">Difficulty</div>
+      <div class="diffs" id="diffs">
+        <button class="diff" data-d="mixed" aria-pressed="true"><b>Mixed</b><small>all 60 Qs</small></button>
+        <button class="diff" data-d="easy" aria-pressed="false"><b>Easy</b><small>basics</small></button>
+        <button class="diff" data-d="medium" aria-pressed="false"><b>Medium</b><small>how it works</small></button>
+        <button class="diff" data-d="hard" aria-pressed="false"><b>Hard</b><small>deep cuts</small></button>
+      </div>
+    </div>
+    <button class="primary" id="startBtn">Start round</button>
+    <div class="stats">
+      <div class="stat"><span class="label">Best score</span><span class="mono" id="bestScore">0</span></div>
+      <div class="stat"><span class="label">Rounds played</span><span class="mono" id="played">0</span></div>
+    </div>
+    <p class="hint">Keys: 1–4 or A–D to answer, Enter for next.</p>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="hud">
+        <div class="cell"><span class="label">Question</span><span class="mono" id="qNum">1/10</span></div>
+        <div class="cell"><span class="label">Score</span><span class="mono" id="score">0</span></div>
+        <div class="cell"><span class="label">Streak</span><span class="mono" id="streak">0</span></div>
+      </div>
+      <div class="ctx">
+        <div class="ctx-row"><span class="label">Context window</span><span class="mono" id="timeTxt" style="font-size:13px">15.0s</span></div>
+        <div class="bar" id="bar"><i id="barFill"></i></div>
+      </div>
+      <div class="qcard enter" id="qcard">
+        <div class="qmeta"><span class="chip" id="qDiff">easy</span><span class="label" id="qTopic"></span></div>
+        <div class="qtext" id="qText"></div>
+        <div class="answers" id="answers"></div>
+      </div>
+      <div class="feedback" id="feedback" hidden>
+        <h3 id="fbTitle"></h3>
+        <p id="fbText"></p>
+      </div>
+      <div class="next-row" id="nextRow" hidden><button class="primary" id="nextBtn">Next</button></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="panel" hidden>
+    <div class="label">Your model class</div>
+    <h2 class="rank" id="rank">Transformer</h2>
+    <div class="stats">
+      <div class="stat"><span class="label">Score</span><span class="mono" id="rScore">0</span></div>
+      <div class="stat"><span class="label">Correct</span><span class="mono" id="rCorrect">0/10</span></div>
+      <div class="stat"><span class="label">Best streak</span><span class="mono" id="rStreak">0</span></div>
+    </div>
+    <div class="seq" id="seq"></div>
+    <p class="lede" id="newBest" hidden><b style="color:var(--accent)">New best score.</b></p>
+    <div class="row">
+      <button class="primary" id="againBtn">Play again</button>
+      <button class="ghost" id="menuBtn">Change difficulty</button>
+    </div>
+    <div class="review" id="review"></div>
+  </section>
+</div>
+
+<script>
+// q: question, a: [correct, wrong, wrong, wrong], d: difficulty, t: topic, x: explanation
+const BANK = [
+  // ---------- EASY ----------
+  {d:"easy",t:"Basics",q:"What does “AI” stand for?",a:["Artificial Intelligence","Automated Interface","Algorithmic Integration","Advanced Information"],x:"AI is short for Artificial Intelligence: getting machines to do tasks that normally need human intelligence."},
+  {d:"easy",t:"Basics",q:"What does “LLM” stand for?",a:["Large Language Model","Linear Learning Machine","Logical Language Module","Layered Logic Model"],x:"LLMs are large neural networks trained on huge amounts of text to predict and generate language."},
+  {d:"easy",t:"Basics",q:"What does the “GPT” in ChatGPT stand for?",a:["Generative Pre-trained Transformer","General Purpose Technology","Guided Prediction Tool","Graph Processing Transformer"],x:"Generative (it produces text), Pre-trained (on lots of data first), Transformer (the neural network architecture)."},
+  {d:"easy",t:"Companies",q:"Which company created ChatGPT?",a:["OpenAI","Google","Meta","Microsoft"],x:"OpenAI released ChatGPT in November 2022. Microsoft is a major investor but didn't build it."},
+  {d:"easy",t:"Companies",q:"Which company makes the Claude AI models?",a:["Anthropic","OpenAI","DeepMind","Mistral"],x:"Claude is built by Anthropic, an AI safety company founded in 2021."},
+  {d:"easy",t:"History",q:"Who proposed the “Imitation Game” (now called the Turing Test) in 1950?",a:["Alan Turing","John von Neumann","Ada Lovelace","Claude Shannon"],x:"Alan Turing's 1950 paper “Computing Machinery and Intelligence” asked whether a machine could pass as human in conversation."},
+  {d:"easy",t:"Jargon",q:"When people say an AI “hallucinated,” they mean it…",a:["Confidently stated something false or made up","Crashed while running","Generated an image","Refused to answer"],x:"A hallucination is fluent, confident output that isn't true, like a fake citation or invented fact."},
+  {d:"easy",t:"Jargon",q:"In AI chat tools, what is a “prompt”?",a:["The text or instruction you give the model","The model's final answer","A software bug","The model's training data"],x:"The prompt is your input. How you phrase it can change the quality of the answer a lot."},
+  {d:"easy",t:"History",q:"In 2016 DeepMind's AlphaGo beat world champion Lee Sedol at which game?",a:["Go","Chess","Poker","StarCraft"],x:"AlphaGo won 4–1. Go was considered much harder for computers than chess because of its huge number of possible positions."},
+  {d:"easy",t:"History",q:"IBM's Deep Blue beat which chess world champion in 1997?",a:["Garry Kasparov","Magnus Carlsen","Bobby Fischer","Anatoly Karpov"],x:"Deep Blue beat Kasparov in a six-game rematch in 1997, a landmark moment for AI."},
+  {d:"easy",t:"Basics",q:"Machine learning is best described as…",a:["Computers learning patterns from data instead of following only hand-written rules","Robots that build other machines","Computers that repair themselves","Programming with no code at all"],x:"In ML, the system improves at a task by finding patterns in examples rather than being told every rule."},
+  {d:"easy",t:"History",q:"Which IBM system won the quiz show Jeopardy! in 2011?",a:["Watson","Deep Blue","Sherlock","Holmes"],x:"Watson beat champions Ken Jennings and Brad Rutter by answering natural-language clues."},
+  {d:"easy",t:"Basics",q:"What does “NLP” stand for in AI?",a:["Natural Language Processing","Neural Logic Programming","Network Layer Protocol","Non-Linear Prediction"],x:"NLP is the field of getting computers to understand and generate human language."},
+  {d:"easy",t:"Basics",q:"Siri, Alexa, and Google Assistant are examples of…",a:["Voice assistants","Search engines","Operating systems","Image generators"],x:"They use speech recognition and language understanding to respond to spoken requests."},
+  {d:"easy",t:"Basics",q:"What is “training data”?",a:["The examples a model learns from","The model's user manual","Data about how fast the model runs","Questions users ask after launch"],x:"Models learn from training data. Its quality and biases shape how the model behaves."},
+  {d:"easy",t:"Basics",q:"Artificial neural networks were loosely inspired by…",a:["The human brain","Spider webs","Electrical power grids","The internet"],x:"They're made of simple connected “neurons” whose connection strengths are adjusted during learning."},
+  {d:"easy",t:"Jargon",q:"What is a “deepfake”?",a:["AI-generated fake video or audio of a real person","A very deep neural network","A fake AI company","A broken AI model"],x:"Deepfakes use generative AI to make realistic but fake media, raising misinformation concerns."},
+  {d:"easy",t:"Basics",q:"Tools like DALL·E and Midjourney mainly create images from…",a:["Text descriptions","Hand-drawn sketches only","3D scans","Audio recordings"],x:"You type a description (a text prompt) and the model generates a matching image."},
+  {d:"easy",t:"Companies",q:"Google's flagship AI model family, announced in December 2023, is called…",a:["Gemini","Llama","Grok","Copilot"],x:"Gemini replaced PaLM as Google's main model family; the Bard chatbot was renamed Gemini in 2024."},
+  {d:"easy",t:"Basics",q:"A “chatbot” is…",a:["A program you can have a text or voice conversation with","A robot that cleans floors","A virus that spreads in chat apps","A type of computer chip"],x:"Chatbots range from simple scripted bots to modern LLM-powered assistants."},
+
+  // ---------- MEDIUM ----------
+  {d:"medium",t:"Research",q:"Which 2017 paper introduced the Transformer architecture?",a:["“Attention Is All You Need”","“Deep Residual Learning”","“ImageNet Classification with Deep CNNs”","“Playing Atari with Deep RL”"],x:"Written by Vaswani et al. at Google, it replaced recurrence with attention and became the basis of modern LLMs."},
+  {d:"medium",t:"LLMs",q:"In a language model, a “token” is…",a:["A chunk of text, like a word or part of a word","A password to access the model","A cryptocurrency payment","One full sentence"],x:"Models read and write in tokens. In English, one token is roughly ¾ of a word on average."},
+  {d:"medium",t:"LLMs",q:"What is a model's “context window”?",a:["The maximum amount of text it can consider at once","The app window it runs in","How long it took to train","The date range of its training data"],x:"Context windows are measured in tokens; anything beyond the limit can't be seen by the model in that request."},
+  {d:"medium",t:"ML",q:"Supervised learning trains on…",a:["Labeled examples (inputs paired with correct answers)","Data with no labels at all","Rewards from a game","Only images"],x:"For example, photos tagged “cat” or “dog” so the model learns to predict the label."},
+  {d:"medium",t:"ML",q:"“Overfitting” means a model…",a:["Memorizes its training data and does poorly on new data","Is too large to fit in memory","Trains too fast","Has too few parameters to learn anything"],x:"An overfit model looks great on training data but fails to generalize. Fixes include more data and regularization."},
+  {d:"medium",t:"LLMs",q:"What does RLHF stand for?",a:["Reinforcement Learning from Human Feedback","Recursive Language with High Fidelity","Random Layer Hidden Function","Real-time Learning for Human Faces"],x:"Humans rate model outputs, and the model is tuned to prefer the responses people rate higher."},
+  {d:"medium",t:"History",q:"ELIZA, a 1960s chatbot by Joseph Weizenbaum, imitated a…",a:["Psychotherapist","Librarian","Chess coach","Customer service agent"],x:"ELIZA's DOCTOR script reflected users' words back as questions. Many people still felt understood by it."},
+  {d:"medium",t:"History",q:"Who coined the term “artificial intelligence” for the 1956 Dartmouth workshop?",a:["John McCarthy","Marvin Minsky","Alan Turing","Herbert Simon"],x:"McCarthy used the phrase in the 1955 proposal for the Dartmouth Summer Research Project, often called AI's founding event."},
+  {d:"medium",t:"Hardware",q:"Why did GPUs become central to deep learning?",a:["They run many matrix calculations in parallel","They have more storage than CPUs","They use less electricity than any chip","They were designed for AI from the start"],x:"GPUs were built for graphics, but the same parallel math powers neural network training."},
+  {d:"medium",t:"LLMs",q:"“Fine-tuning” a model means…",a:["Training an existing model further on a smaller, specific dataset","Building a model from scratch","Compressing a model to run on phones","Adjusting the screen brightness of the app"],x:"Fine-tuning adapts a general pre-trained model to a task, domain, or style."},
+  {d:"medium",t:"LLMs",q:"What does raising the “temperature” setting usually do to an LLM's output?",a:["Makes it more random and varied","Makes it faster","Makes it more accurate","Makes the answers shorter"],x:"Low temperature favors the most likely tokens; high temperature samples more freely."},
+  {d:"medium",t:"ML",q:"In a neural network, “parameters” mostly refers to…",a:["The learned weights and biases","The settings you type in a prompt","The number of users","The model's file name"],x:"When a model is described as having billions of parameters, those are its learned weights."},
+  {d:"medium",t:"History",q:"Which 2012 neural network won the ImageNet challenge and kicked off the deep learning boom?",a:["AlexNet","LeNet","ResNet","VGGNet"],x:"AlexNet (Krizhevsky, Sutskever, Hinton) cut the error rate dramatically using GPUs and a deep CNN."},
+  {d:"medium",t:"ML",q:"Backpropagation is used to…",a:["Compute how to adjust each weight to reduce error","Send data back to the user","Undo a model's last answer","Back up a model to disk"],x:"It applies the chain rule to compute gradients, which gradient descent then uses to update weights."},
+  {d:"medium",t:"ML",q:"Which is an example of unsupervised learning?",a:["Grouping customers into clusters with no labels","Predicting house prices from labeled sales","Classifying emails as spam using tagged examples","Teaching a robot with rewards"],x:"Unsupervised learning finds structure in unlabeled data, such as clusters."},
+  {d:"medium",t:"LLMs",q:"What does RAG stand for?",a:["Retrieval-Augmented Generation","Recursive Attention Graph","Rapid AI Generation","Random Access GPU"],x:"RAG fetches relevant documents and puts them in the prompt so the model can answer from them."},
+  {d:"medium",t:"History",q:"An “AI winter” refers to…",a:["A period when funding and interest in AI dropped","AI models that run better in the cold","A Russian AI program","A season when chatbots are offline"],x:"Major AI winters hit in the 1970s and late 1980s after early hype outran results."},
+  {d:"medium",t:"Science",q:"DeepMind's AlphaFold made a breakthrough in predicting…",a:["Protein structures","Weather","Stock prices","Earthquakes"],x:"AlphaFold predicts 3D protein shapes from amino-acid sequences. Its creators shared the 2024 Nobel Prize in Chemistry."},
+  {d:"medium",t:"LLMs",q:"An “embedding” is…",a:["A list of numbers representing the meaning of text or images","A video inside a web page","A hidden backdoor in a model","The model's source code"],x:"Similar meanings end up close together in embedding space, which powers search and recommendations."},
+  {d:"medium",t:"ML",q:"Convolutional neural networks (CNNs) are especially suited to…",a:["Images","Spreadsheets","Sorting lists","Compressing audio files"],x:"Convolutions scan small patches, letting the network detect edges, shapes, and objects anywhere in an image."},
+
+  // ---------- HARD ----------
+  {d:"hard",t:"History",q:"Who invented the perceptron in 1958?",a:["Frank Rosenblatt","Marvin Minsky","Geoffrey Hinton","Warren McCulloch"],x:"Rosenblatt's perceptron was an early learning machine, built in hardware as the Mark I Perceptron."},
+  {d:"hard",t:"History",q:"The 1969 book “Perceptrons,” which highlighted limits of single-layer networks, was written by…",a:["Minsky and Papert","Rumelhart and Hinton","Newell and Simon","LeCun and Bengio"],x:"It showed single-layer perceptrons can't learn functions like XOR and is often linked to reduced neural network funding."},
+  {d:"hard",t:"People",q:"Who shared the 2018 Turing Award for deep learning?",a:["Hinton, LeCun, and Bengio","Hassabis, Silver, and Legg","Ng, Li, and Karpathy","Sutskever, Altman, and Brockman"],x:"The three are often called the “godfathers of deep learning.”"},
+  {d:"hard",t:"People",q:"The 2024 Nobel Prize in Physics went to…",a:["John Hopfield and Geoffrey Hinton","Demis Hassabis and John Jumper","Yann LeCun and Yoshua Bengio","Fei-Fei Li and Andrew Ng"],x:"For foundational work enabling machine learning with artificial neural networks. Hassabis and Jumper won Chemistry."},
+  {d:"hard",t:"Architecture",q:"What does self-attention in a Transformer compute?",a:["How much each token should weigh every other token in the sequence","The next word using only the previous word","Which GPU should run each layer","The model's confidence score for the whole answer"],x:"Each token builds query, key, and value vectors; attention weights come from query–key similarity."},
+  {d:"hard",t:"Architecture",q:"LSTM networks (1997) were designed mainly to address…",a:["The vanishing gradient problem in recurrent networks","Slow GPU memory","Overfitting in image models","Tokenization errors"],x:"Hochreiter and Schmidhuber's gated memory cells let gradients flow across long sequences."},
+  {d:"hard",t:"Research",q:"DeepMind's 2022 “Chinchilla” paper suggested that many large models were…",a:["Undertrained: data should scale along with parameters","Too small to be useful","Trained on too much data","Better without attention layers"],x:"Chinchilla found compute-optimal training uses roughly 20 tokens per parameter, far more data than earlier models used."},
+  {d:"hard",t:"Architecture",q:"A GAN (Goodfellow et al., 2014) trains two networks. What are they?",a:["A generator and a discriminator","An encoder and a decoder","A teacher and a student","A planner and an executor"],x:"The generator makes fakes, the discriminator tries to spot them, and both improve by competing."},
+  {d:"hard",t:"ML",q:"What does “dropout” do during training?",a:["Randomly turns off neurons to reduce overfitting","Removes bad training examples","Lowers the learning rate over time","Deletes unused layers after training"],x:"By forcing the network not to rely on any single neuron, dropout acts as a regularizer."},
+  {d:"hard",t:"Safety",q:"Anthropic's “Constitutional AI” trains models using…",a:["A written set of principles the model uses to critique and revise outputs","A legal review of every answer","Votes from government officials","A hard-coded list of banned words only"],x:"The model critiques its own responses against the principles, which reduces reliance on human labels for harmlessness."},
+  {d:"hard",t:"Architecture",q:"In a Mixture-of-Experts (MoE) model…",a:["Each token is routed to only a few specialized sub-networks","Several separate chatbots vote on every answer","Human experts review the outputs","Every parameter is used for every token"],x:"MoE lets a model have many total parameters while only activating a fraction per token, saving compute."},
+  {d:"hard",t:"Architecture",q:"Google's BERT (2018) is best described as…",a:["A bidirectional, encoder-only Transformer","A decoder-only chat model","A recurrent network for speech","An image diffusion model"],x:"BERT reads context from both directions and is trained by predicting masked-out words."},
+  {d:"hard",t:"Math",q:"What does the softmax function do?",a:["Turns a vector of scores into probabilities that sum to 1","Rounds weights to whole numbers","Picks the smallest value","Removes negative numbers"],x:"LLMs use softmax over their output scores (logits) to get a probability for every possible next token."},
+  {d:"hard",t:"Architecture",q:"Why do Transformers need positional encodings?",a:["Attention on its own has no sense of word order","To compress the vocabulary","To speed up GPU memory access","To decide where to place images"],x:"Without position information, “dog bites man” and “man bites dog” would look the same to attention."},
+  {d:"hard",t:"Concepts",q:"Moravec's paradox observes that, for AI…",a:["Abstract reasoning is relatively easy, but basic perception and movement are hard","Bigger models always get worse","AI can never beat humans at games","Training cost doubles every year"],x:"Skills toddlers find effortless, like walking and grasping, proved far harder to automate than chess."},
+  {d:"hard",t:"Math",q:"If the learning rate in gradient descent is set too high, training will likely…",a:["Overshoot and fail to converge, or diverge","Converge perfectly but slowly","Stop after one step","Use less memory"],x:"Huge steps bounce past the minimum. Too small a rate is the opposite problem: very slow progress."},
+  {d:"hard",t:"Generative",q:"Diffusion models generate images by…",a:["Learning to reverse a gradual noising process","Copying and pasting pieces of training images","Searching the web for matching pictures","Drawing one pixel at a time left to right"],x:"They start from pure noise and denoise step by step, guided by the text prompt. Stable Diffusion works this way."},
+  {d:"hard",t:"Math",q:"Which activation function is defined as f(x) = max(0, x)?",a:["ReLU","Sigmoid","Tanh","Softmax"],x:"ReLU (Rectified Linear Unit) is cheap to compute and helped make deep networks easier to train."},
+  {d:"hard",t:"Research",q:"Word2vec famously showed vector arithmetic like “king − man + woman ≈ …”",a:["queen","prince","kingdom","princess"],x:"Word2vec (Mikolov et al., 2013) learned embeddings where directions capture relationships like gender."},
+  {d:"hard",t:"Deployment",q:"Quantizing a model means…",a:["Storing its weights at lower precision (e.g. 16-bit to 4-bit) to save memory","Splitting it across quantum computers","Counting how many parameters it has","Removing its safety training"],x:"Quantization makes models smaller and faster, usually with a small accuracy cost."}
+];
+
+const ROUND = 10, TIME = 15;
+const RANKS = [[90,"Frontier Model"],[70,"Transformer"],[50,"RNN"],[30,"Perceptron"],[0,"Random Baseline"]];
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("tt_" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("tt_" + k, JSON.stringify(v)); } catch {} }
+};
+
+let diff = store.get("diff", "mixed");
+let S = null, timer = null;
+
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function show(id) { for (const s of ["start","game","results"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
+function bestKey() { return "best_" + diff; }
+
+function renderStart() {
+  document.querySelectorAll(".diff").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.d === diff)));
+  const best = store.get(bestKey(), 0);
+  $("bestScore").textContent = best;
+  $("played").textContent = store.get("played", 0);
+  $("bestTop").textContent = "Best (" + diff + "): " + best;
+  show("start");
+}
+
+function startRound() {
+  const pool = diff === "mixed" ? BANK : BANK.filter(q => q.d === diff);
+  const qs = shuffle(pool).slice(0, ROUND).map(q => {
+    const opts = shuffle(q.a.map((text, i) => ({ text, right: i === 0 })));
+    return { ...q, opts };
+  });
+  S = { qs, i: 0, score: 0, streak: 0, bestStreak: 0, results: [], answered: false };
+  show("game");
+  renderQ();
+}
+
+function renderQ() {
+  const q = S.qs[S.i];
+  S.answered = false;
+  $("qNum").textContent = (S.i + 1) + "/" + S.qs.length;
+  $("score").textContent = S.score;
+  $("streak").textContent = S.streak;
+  $("qDiff").textContent = q.d; $("qDiff").className = "chip " + q.d;
+  $("qTopic").textContent = q.t;
+  $("qText").textContent = q.q;
+  const box = $("answers"); box.innerHTML = "";
+  q.opts.forEach((o, idx) => {
+    const b = document.createElement("button");
+    b.className = "ans"; b.id = "ans" + idx;
+    b.innerHTML = '<span class="key">' + "ABCD"[idx] + '</span><span></span>';
+    b.lastChild.textContent = o.text;
+    b.addEventListener("click", () => answer(idx));
+    box.appendChild(b);
+  });
+  $("feedback").hidden = true; $("nextRow").hidden = true;
+  const card = $("qcard"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter");
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timer);
+  const t0 = performance.now();
+  S.left = TIME;
+  const tick = () => {
+    S.left = Math.max(0, TIME - (performance.now() - t0) / 1000);
+    $("timeTxt").textContent = S.left.toFixed(1) + "s";
+    $("barFill").style.transform = "scaleX(" + (S.left / TIME) + ")";
+    $("bar").classList.toggle("low", S.left < 5);
+    if (S.left <= 0) { clearInterval(timer); answer(-1); }
+  };
+  tick();
+  timer = setInterval(tick, 100);
+}
+
+function answer(idx) {
+  if (S.answered) return;
+  S.answered = true;
+  clearInterval(timer);
+  const q = S.qs[S.i];
+  const right = idx >= 0 && q.opts[idx].right;
+  q.opts.forEach((o, k) => {
+    const b = $("ans" + k); b.disabled = true;
+    if (o.right) b.classList.add("correct");
+    else if (k === idx) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  let gained = 0;
+  if (right) {
+    S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+    gained = 100 + Math.round(S.left / TIME * 50) + (S.streak - 1) * 10;
+    S.score += gained;
+  } else S.streak = 0;
+  S.results.push({ q, right, picked: idx >= 0 ? q.opts[idx].text : null });
+  $("score").textContent = S.score; $("streak").textContent = S.streak;
+  const fb = $("feedback");
+  fb.className = "feedback" + (right ? "" : " bad");
+  $("fbTitle").textContent = right ? "Correct  +" + gained : (idx < 0 ? "Out of time" : "Not quite");
+  $("fbText").textContent = (right ? "" : "Answer: " + q.a[0] + ". ") + q.x;
+  fb.hidden = false;
+  $("nextBtn").textContent = S.i === S.qs.length - 1 ? "See results" : "Next question";
+  $("nextRow").hidden = false;
+  $("nextBtn").focus({ preventScroll: true });
+}
+
+function next() {
+  if (!S || !S.answered) return;
+  if (S.i < S.qs.length - 1) { S.i++; renderQ(); } else finish();
+}
+
+function finish() {
+  const correct = S.results.filter(r => r.right).length;
+  const pct = correct / S.qs.length * 100;
+  $("rank").textContent = RANKS.find(r => pct >= r[0])[1];
+  $("rScore").textContent = S.score;
+  $("rCorrect").textContent = correct + "/" + S.qs.length;
+  $("rStreak").textContent = S.bestStreak;
+  $("seq").innerHTML = S.results.map((r, i) => '<span class="' + (r.right ? "y" : "n") + '" title="Q' + (i + 1) + '">' + (i + 1) + "</span>").join("");
+  const prev = store.get(bestKey(), 0);
+  $("newBest").hidden = !(S.score > prev);
+  if (S.score > prev) store.set(bestKey(), S.score);
+  store.set("played", store.get("played", 0) + 1);
+  $("bestTop").textContent = "Best (" + diff + "): " + Math.max(prev, S.score);
+
+  const rv = $("review"); rv.innerHTML = "";
+  const missed = S.results.filter(r => !r.right);
+  const h = document.createElement("div"); h.className = "label";
+  h.textContent = missed.length ? "Review what you missed" : "Perfect round. Nothing to review.";
+  rv.appendChild(h);
+  missed.forEach(r => {
+    const d = document.createElement("div"); d.className = "review-item";
+    const p1 = document.createElement("p"); p1.textContent = r.q.q;
+    const p2 = document.createElement("p"); p2.className = "a"; p2.textContent = r.q.a[0];
+    const p3 = document.createElement("p"); p3.className = "x"; p3.textContent = (r.picked ? "You picked: " + r.picked + ". " : "No answer. ") + r.q.x;
+    d.append(p1, p2, p3); rv.appendChild(d);
+  });
+  show("results");
+}
+
+$("diffs").addEventListener("click", e => {
+  const b = e.target.closest(".diff"); if (!b) return;
+  diff = b.dataset.d; store.set("diff", diff); renderStart();
+});
+$("startBtn").addEventListener("click", startRound);
+$("nextBtn").addEventListener("click", next);
+$("againBtn").addEventListener("click", startRound);
+$("menuBtn").addEventListener("click", renderStart);
+document.addEventListener("keydown", e => {
+  if ($("game").hidden || !S) return;
+  const k = e.key.toLowerCase();
+  const map = { "1":0, "2":1, "3":2, "4":3, a:0, b:1, c:2, d:3 };
+  if (!S.answered && k in map) { e.preventDefault(); answer(map[k]); }
+  else if (S.answered && e.key === "Enter" && document.activeElement !== $("nextBtn")) { e.preventDefault(); next(); }
+});
+
+renderStart();
+</script>
